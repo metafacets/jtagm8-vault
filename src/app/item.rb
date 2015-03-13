@@ -7,6 +7,21 @@ require_relative '../../src/model/mongo_mapper-db'
 
 class Album < PAlbum
 
+  def self.exists?(name=nil)
+    name.nil? ? self.count > 0 : self.count_by_name(name) > 0
+  end
+
+  # open existing album by name
+  def self.open(name) self.get_by_name(name) end
+
+  # create new or open existing album by name
+  # postpone - needs to pass a loaded taxonomy for new album
+  #def self.lazy(name)
+  #  alm = self.open(name)
+  #  alm = self.new(name) if alm.nil?
+  #  alm
+  #end
+
   def initialize(name,taxonomy)
     super(name:name,taxonomy:taxonomy)
     save
@@ -20,9 +35,22 @@ class Album < PAlbum
     end
   end
 
+  def has_item?(name=nil) count_items(name) > 0 end
+
+  def query_items(query)
+    taxonomy.query_items(query)&items
+  end
+
 end
 
 class Item < PItem
+
+  def self.exists?(name=nil)
+    name.nil? ? self.count > 0 : self.count_by_name(name) > 0
+  end
+
+#  # open existing item by name
+#  def self.open(name) self.get_by_name(name) end
 
   def initialize(album)
     super(date:Time.now,album:album)

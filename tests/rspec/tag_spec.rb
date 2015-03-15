@@ -3,10 +3,11 @@ require_relative '../../src/app/tag'
 require_relative '../../tests/fixtures/animal_01'
 include AnimalTaxonomy
 
+Tagm8Db.open('tagm8-test')
 
 describe 'Taxonomy' do
   context 'class methods' do
-    MongoMapper.connection.drop_database('tagm8')
+    Tagm8Db.wipe
     tax1 = Taxonomy.new(name='tax1')
     Taxonomy.new(name='tax2')
     Taxonomy.new(name='tax3')
@@ -28,7 +29,7 @@ describe 'Taxonomy' do
     it :taxonomies_by_name do expect(list).to eq(['tax1','tax2','tax3','tax4']) end
   end
   context 'empty' do
-    MongoMapper.connection.drop_database('tagm8')
+    Tagm8Db.wipe
     tax = Taxonomy.new
     [:has_tag?, :has_root?, :has_folksonomy?].each do |method|
       result = tax.send(method)
@@ -36,7 +37,7 @@ describe 'Taxonomy' do
     end
   end
   context 'add_tag(:a)' do
-    MongoMapper.connection.drop_database('tagm8')
+    Tagm8Db.wipe
     tax = Taxonomy.new
     tax.add_tag(:a)
     has_tag = tax.has_tag?
@@ -47,7 +48,7 @@ describe 'Taxonomy' do
     it ':has_root? is true' do expect(has_root).to be_falsey end
   end
   context 'add_tag(:a,:b)' do
-    MongoMapper.connection.drop_database('tagm8')
+    Tagm8Db.wipe
     tax = Taxonomy.new
     tax.add_tag(:a,:b)
     has_tag = tax.has_tag?
@@ -83,7 +84,7 @@ describe 'Taxonomy' do
   end
   context 'tag, root and folksonomy counts' do
     before(:all) do
-      MongoMapper.connection.drop_database('tagm8')
+      Tagm8Db.wipe
       @tax = animal_taxonomy(false)
     end
     it 'taxonomy has 11 tags' do expect(@tax.count_tags).to eq(11) end
@@ -91,7 +92,7 @@ describe 'Taxonomy' do
     it 'taxonomy has 2 roots' do expect(@tax.count_roots).to eq(2) end
   end
   context 'instance methods' do
-    MongoMapper.connection.drop_database('tagm8')
+    Tagm8Db.wipe
     tax = Taxonomy.new
     subject {tax.get_lazy_tag(:my_tag)}
     methods = [:name,:children,:has_child?,:union_children,:subtract_children, :delete_child,:parents,:has_parent?,:union_parents,:subtract_parents, :delete_parent]
@@ -103,7 +104,7 @@ describe 'Taxonomy' do
       describe ':b -x-> :a' do
         describe 'before' do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             tax = Taxonomy.new
             tax.add_tag(:b,:a)
             @a = tax.get_tag_by_name(:a)
@@ -115,7 +116,7 @@ describe 'Taxonomy' do
         end
         describe :delete_child do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:b,:a)
             @a = @tax.get_tag_by_name(:a)
@@ -130,7 +131,7 @@ describe 'Taxonomy' do
         end
         describe :delete_parent do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:b,:a)
             @a = @tax.get_tag_by_name(:a)
@@ -146,7 +147,7 @@ describe 'Taxonomy' do
       context ':b -x-> :a -> :r' do
         context 'before' do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:a,:r)
             @tax.add_tag(:b,:a)
@@ -164,7 +165,7 @@ describe 'Taxonomy' do
         end
         context :delete_child do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:a,:r)
             @tax.add_tag(:b,:a)
@@ -184,7 +185,7 @@ describe 'Taxonomy' do
         end
         context :delete_parent do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:a,:r)
             @tax.add_tag(:b,:a)
@@ -206,7 +207,7 @@ describe 'Taxonomy' do
       context ':l -> :b -x-> :a' do
         context 'before' do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:b,:a)
             @tax.add_tag(:l,:b)
@@ -224,7 +225,7 @@ describe 'Taxonomy' do
         end
         context :delete_child do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:b,:a)
             @tax.add_tag(:l,:b)
@@ -244,7 +245,7 @@ describe 'Taxonomy' do
         end
         context :delete_parent do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:b,:a)
             @tax.add_tag(:l,:b)
@@ -266,7 +267,7 @@ describe 'Taxonomy' do
       context ':a1 <- :b -x-> :a2' do
         context 'before' do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:b,:a1)
             @tax.add_tag(:b,:a2)
@@ -284,7 +285,7 @@ describe 'Taxonomy' do
         end
         context :delete_child do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:b,:a1)
             @tax.add_tag(:b,:a2)
@@ -303,7 +304,7 @@ describe 'Taxonomy' do
         end
         context :delete_parent do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:b,:a1)
             @tax.add_tag(:b,:a2)
@@ -324,7 +325,7 @@ describe 'Taxonomy' do
       context ':b1 -> :a <-x- :b2' do
         context 'before' do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:b1,:a)
             @tax.add_tag(:b2,:a)
@@ -341,7 +342,7 @@ describe 'Taxonomy' do
         end
         context :delete_child do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:b1,:a)
             @tax.add_tag(:b2,:a)
@@ -360,7 +361,7 @@ describe 'Taxonomy' do
         end
         context :delete_parent do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:b1,:a)
             @tax.add_tag(:b2,:a)
@@ -383,7 +384,7 @@ describe 'Taxonomy' do
       describe 'c -> (b) -> a => c -> a' do
         describe 'before' do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:c,:b)
             @tax.add_tag(:b,:a)
@@ -401,7 +402,7 @@ describe 'Taxonomy' do
         end
         describe 'after' do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:c,:b)
             @tax.add_tag(:b,:a)
@@ -420,7 +421,7 @@ describe 'Taxonomy' do
       describe 'c -> (b) -> [a1,a2] => c -> [a1,a2]' do
         describe 'before' do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:c,:b)
             @tax.add_tag(:b,:a1)
@@ -442,7 +443,7 @@ describe 'Taxonomy' do
         end
         describe 'after' do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:c,:b)
             @tax.add_tag(:b,:a1)
@@ -465,7 +466,7 @@ describe 'Taxonomy' do
       describe '[c1,c2] -> (b) -> a => [c1,c2] -> a' do
         describe 'before' do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:c1,:b)
             @tax.add_tag(:c2,:b)
@@ -486,7 +487,7 @@ describe 'Taxonomy' do
         end
         describe 'after' do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:c1,:b)
             @tax.add_tag(:c2,:b)
@@ -508,7 +509,7 @@ describe 'Taxonomy' do
       describe '[c1,c2] -> (b) -> [a1,a2] => [c1,c2] -> [a1,a2]' do
         describe 'before' do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:c1,:b)
             @tax.add_tag(:c2,:b)
@@ -533,7 +534,7 @@ describe 'Taxonomy' do
         end
         describe 'after' do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:c1,:b)
             @tax.add_tag(:c2,:b)
@@ -559,7 +560,7 @@ describe 'Taxonomy' do
       describe 'b2 -> (a) -> b1 -> c => b2, b1 -> c' do
         describe 'before' do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:b1,:a)
             @tax.add_tag(:b2,:a)
@@ -583,7 +584,7 @@ describe 'Taxonomy' do
         end
         describe 'after' do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.add_tag(:b1,:a)
             @tax.add_tag(:b2,:a)
@@ -613,7 +614,7 @@ describe 'Taxonomy' do
       [:dag_fix,:dag_prevent].each do |context|
         context context do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.send(context)
             @tax.add_tag(:a,:a)
@@ -630,7 +631,7 @@ describe 'Taxonomy' do
     context 'prevent reflection (:a -> :b -+-> :a)' do
       context ':dag_fix (:a -x-> :b -> :a)' do
         before(:all) do
-          MongoMapper.connection.drop_database('tagm8')
+          Tagm8Db.wipe
           @tax = Taxonomy.new
           @tax.dag_fix
           @tax.add_tag(:a,:b)
@@ -649,7 +650,7 @@ describe 'Taxonomy' do
       end
       context ':dag_prevent (:a -> :b -x-> :a)' do
         before(:all) do
-          MongoMapper.connection.drop_database('tagm8')
+          Tagm8Db.wipe
           @tax = Taxonomy.new
           @tax.dag_prevent
           @tax.add_tag(:a,:b)
@@ -670,7 +671,7 @@ describe 'Taxonomy' do
     context 'prevent looping (:a -> :b -> :c -+-> :a)' do
       context ':dag_fix (:a -x-> :b -> :c -> :a)' do
         before(:all) do
-          MongoMapper.connection.drop_database('tagm8')
+          Tagm8Db.wipe
           @tax = Taxonomy.new
           @tax.dag_fix
           @tax.add_tag(:a,:b)
@@ -693,7 +694,7 @@ describe 'Taxonomy' do
       end
       context ':dag_prevent (:a -> :b -> :c -x-> :a)' do
         before(:all) do
-          MongoMapper.connection.drop_database('tagm8')
+          Tagm8Db.wipe
           @tax = Taxonomy.new
           @tax.dag_prevent
           @tax.add_tag(:a,:b)
@@ -718,7 +719,7 @@ describe 'Taxonomy' do
     context 'prevent selective looping (:b2 <- :a -> :b1 -> :c1 -+-> :a)' do
       context ':dag_fix (:a -x-> :b1 -> :c1 -> :a -> :b2)' do
         before(:all) do
-          MongoMapper.connection.drop_database('tagm8')
+          Tagm8Db.wipe
           @tax = Taxonomy.new
           @tax.dag_fix
           @tax.add_tag(:a,:b1)
@@ -745,7 +746,7 @@ describe 'Taxonomy' do
       end
       context ':dag_prevent (b2 <- :a -> :b1 -> :c1)' do
         before(:all) do
-          MongoMapper.connection.drop_database('tagm8')
+          Tagm8Db.wipe
           @tax = Taxonomy.new
           @tax.dag_prevent
           @tax.add_tag(:a,:b1)
@@ -778,7 +779,7 @@ describe 'Taxonomy' do
       [[:a],:a].each do |ddl|
         describe ddl do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.dag_prevent
             @tax.instantiate(ddl)
@@ -793,7 +794,7 @@ describe 'Taxonomy' do
       ['[:a]',':a'].each do |ddl|
         describe ddl do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.dag_prevent
             @tax.instantiate(ddl)
@@ -810,7 +811,7 @@ describe 'Taxonomy' do
       ['[:a,:b]',':a,:b'].each do |ddl|
         describe ddl do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.dag_prevent
             @tax.instantiate(ddl)
@@ -829,7 +830,7 @@ describe 'Taxonomy' do
       ['a,b',':a:b',':a::b',':a,,:b','a::b','::a,,b'].each do |ddl|
         describe ddl do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.dag_prevent
             @tax.instantiate(ddl)
@@ -848,7 +849,7 @@ describe 'Taxonomy' do
       ['[:a>:b]',':a>:b','[:b<:a]',':b<:a'].each do |ddl|
         describe ddl do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.dag_prevent
             @tax.instantiate(ddl)
@@ -870,7 +871,7 @@ describe 'Taxonomy' do
       ['[:a>b]','a>b','a>::b','[:b<<:a]',':b<<::a'].each do |ddl|
         describe ddl do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.dag_prevent
             @tax.instantiate(ddl)
@@ -892,7 +893,7 @@ describe 'Taxonomy' do
       [':b<><<:a'].each do |ddl|
         describe ddl do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.dag_prevent
             @tax.instantiate(ddl)
@@ -905,7 +906,7 @@ describe 'Taxonomy' do
       ['[[:a,:b]>:c]','[:a,:b]>:c','[:c<[:a,:b]]',':c<[:a,:b]'].each do |ddl|
         describe ddl do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.dag_prevent
             @tax.instantiate(ddl)
@@ -929,7 +930,7 @@ describe 'Taxonomy' do
       ['[:a>[:b,:c]]',':a>[:b,:c]','[[:b,:c]<:a]','[:b,:c]<:a'].each do |ddl|
         describe ddl do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.dag_prevent
             @tax.instantiate(ddl)
@@ -952,7 +953,7 @@ describe 'Taxonomy' do
       ['[[:a1,:a2]>[:b1,:b2]]','[:a1,:a2]>[:b1,:b2]','[[:b1,:b2]<[:a1,:a2]]','[:b1,:b2]<[:a1,:a2]'].each do |ddl|
         describe ddl do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.dag_prevent
             @tax.instantiate(ddl)
@@ -981,7 +982,7 @@ describe 'Taxonomy' do
       ['[:a>:b>:c]',':a>:b>:c','[:c<:b<:a]',':c<:b<:a'].each do |ddl|
         describe ddl do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.dag_prevent
             @tax.instantiate(ddl)
@@ -1006,7 +1007,7 @@ describe 'Taxonomy' do
       ['[[:a1,:a2]>:b>[:c1,:c2]]','[:a1,:a2]>:b>[:c1,:c2]','[[:c1,:c2]<:b<[:a1,:a2]]','[:c1,:c2]<:b<[:a1,:a2]'].each do |ddl|
         describe ddl do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.dag_prevent
             @tax.instantiate(ddl)
@@ -1038,7 +1039,7 @@ describe 'Taxonomy' do
       [':a>[:b1,:b2>[:c21,:c22],:b3]',':a>[:b2>[:c21,:c22],:b1,:b3]',':a>[:b1,:b3,:b2>[:c21,:c22]]','[:b1,[:c21,:c22]<:b2,:b3]<:a','[[:c21,:c22]<:b2,:b1,:b3]<:a','[:b1,:b3,[:c21,:c22]<:b2]<:a'].each do |ddl|
         describe ddl do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.dag_prevent
             @tax.instantiate(ddl)
@@ -1072,7 +1073,7 @@ describe 'Taxonomy' do
       [':a>[:b1,[:c21,:c22]<:b2,:b3]','[:b1,:b2>[:c21,:c22],:b3]<:a',':a>[[:c21,:c22]<:b2,:b1,:b3]','[:b2>[:c21,:c22],:b1,:b3]<:a',':a>[:b1,:b3,[:c21,:c22]<:b2]','[:b1,:b3,:b2>[:c21,:c22]]<:a'].each do |ddl|
         describe ddl do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.dag_prevent
             @tax.instantiate(ddl)
@@ -1106,7 +1107,7 @@ describe 'Taxonomy' do
       ['[[:carp,:herring]<:fish,:insect]<:animal','[:insect,[:carp,:herring]<:fish]<:animal',':animal>[:insect,:fish>[:carp,:herring]]',':animal>[:fish>[:carp,:herring],:insect]'].each do |ddl|
         describe ddl do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = Taxonomy.new
             @tax.dag_prevent
             @tax.instantiate(ddl)
@@ -1137,7 +1138,7 @@ describe 'Taxonomy' do
       ['add_tags','instantiate'].each do |method|
         describe "#{method}" do
           before(:all) do
-            MongoMapper.connection.drop_database('tagm8')
+            Tagm8Db.wipe
             @tax = animal_taxonomy(method=='instantiate')
             @animal = @tax.get_tag_by_name(:animal)
             @food = @tax.get_tag_by_name(:food)
@@ -1161,7 +1162,7 @@ describe 'Taxonomy' do
                 ,[':a>[:b1>[:c1,:c2],:b2,:b3>[:c3,:c4,:c5]]',[:b1,:b2,:b3,:c1,:c2,:c3,:c4,:c5]]
         ]
         tests.each do |test|
-          MongoMapper.connection.drop_database('tagm8')
+          Tagm8Db.wipe
           tax = Taxonomy.new
           tax.instantiate(test[0])
           a = tax.get_tag_by_name(:a)
@@ -1178,7 +1179,7 @@ describe 'Taxonomy' do
                 ,['[:c1,:c2]>:b1>:a<:b2<[:c3,:c4,:c5]',[:b1,:b2,:c1,:c2,:c3,:c4,:c5]]
         ]
         tests.each do |test|
-          MongoMapper.connection.drop_database('tagm8')
+          Tagm8Db.wipe
           tax = Taxonomy.new
           tax.instantiate(test[0])
           a = tax.get_tag_by_name(:a)
@@ -1189,7 +1190,7 @@ describe 'Taxonomy' do
       end
       describe :query_items do
         describe ':a(i1)>[:b(i2,i3),:c(i3)]' do
-          MongoMapper.connection.drop_database('tagm8')
+          Tagm8Db.wipe
           tax = Taxonomy.new
           alm = tax.add_album('alm')
           tax.instantiate(':a>[:b,:c]')
@@ -1235,7 +1236,7 @@ describe 'Taxonomy' do
                     ,['(#c4&#c2)|#x',[:i4,:i6],[:i4,:i6]]\
                     ]
             tests.each do |test|
-              MongoMapper.connection.drop_database('tagm8')
+              Tagm8Db.wipe
               tax = Taxonomy.new
               alm1 = tax.add_album('alm1')
               alm2 = tax.add_album('alm2')
@@ -1273,7 +1274,7 @@ describe 'Taxonomy' do
                     ,['#y',[]]\
                     ]
             tests.each do |test|
-              MongoMapper.connection.drop_database('tagm8')
+              Tagm8Db.wipe
               tax = Taxonomy.new
               alm = tax.add_album('alm')
               tax.instantiate(':a>[:b1>[:c1,:c2],:b2>[:c3,:c4]]')

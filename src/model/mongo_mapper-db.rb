@@ -1,9 +1,25 @@
 require 'active_support'
 require 'mongo_mapper'
 
-MongoMapper.connection = Mongo::Connection.new('localhost')
-MongoMapper.database = 'tagm8'
-MongoMapper.connection.drop_database('tagm8')
+module Tagm8Db
+  def open(db)
+    @db = db
+    MongoMapper.connection = Mongo::Connection.new('localhost')
+    MongoMapper.database = db
+    PTag.ensure_index(:name)
+    PTag.ensure_index(:is_root)
+    PTag.ensure_index(:is_folk)
+    PTag.ensure_index(:taxonomy)
+  end
+  def wipe
+    MongoMapper.connection.drop_database(@db)
+  end
+  module_function :open, :wipe
+end
+
+#MongoMapper.connection.drop_database('tagm8')
+#MongoMapper.connection = Mongo::Connection.new('localhost')
+#MongoMapper.database = 'db'
 
 class PTaxonomy
   # PTaxonomy <->> PTag    - manual
@@ -48,6 +64,10 @@ class PTaxonomy
 
   def tags
     PTag.where(taxonomy:self._id.to_s).all
+  end
+
+  def list_tags
+    tags.map{|tag| tag.name}
   end
 
   def count_tags(name=nil)
@@ -289,7 +309,3 @@ class PItem
 
 end
 
-PTag.ensure_index(:name)
-PTag.ensure_index(:is_root)
-PTag.ensure_index(:is_folk)
-PTag.ensure_index(:taxonomy)

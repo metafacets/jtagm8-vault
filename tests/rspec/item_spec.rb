@@ -1,9 +1,11 @@
 require 'rspec'
 require_relative '../../src/app/item'
 
+Tagm8Db.open('tagm8-test')
+
 describe Item do
   context 'class methods' do
-    MongoMapper.connection.drop_database('tagm8')
+    Tagm8Db.wipe
     tax1 = Taxonomy.new('tax1')
     tax2 = Taxonomy.new('tax2')
     alm1 = tax1.add_album('alm1')
@@ -55,7 +57,7 @@ describe Item do
     it 'alm1 :list_items' do expect(alm1_list_items).to eq(['i1','i2']) end
   end
   describe 'instance methods' do
-    MongoMapper.connection.drop_database('tagm8')
+    Tagm8Db.wipe
     tax = Taxonomy.new
     alm = tax.add_album('alm')
     item = alm.add_item('i1')
@@ -94,7 +96,7 @@ describe Item do
     tests.each do |test|
       describe test[0] do
         describe :parse_entry do
-          MongoMapper.connection.drop_database('tagm8')
+          Tagm8Db.wipe
           tax = Taxonomy.new
           alm = tax.add_album('alm')
           item = Item.new(alm)
@@ -103,7 +105,7 @@ describe Item do
           it "content = #{test[2]}" do expect(item.content).to eq(test[2]) end
         end
         describe :parse_content do
-          MongoMapper.connection.drop_database('tagm8')
+          Tagm8Db.wipe
           tax = Taxonomy.new
           alm = tax.add_album('alm')
           item = Item.new(alm)
@@ -114,7 +116,7 @@ describe Item do
           it "tags = #{test[3]}" do expect(item_tags).to eq(test[3]) end
         end
         describe :parse do
-          MongoMapper.connection.drop_database('tagm8')
+          Tagm8Db.wipe
           tax = Taxonomy.new
           alm = tax.add_album('alm')
           item = Item.new(alm)
@@ -127,7 +129,7 @@ describe Item do
           it "Taxonomy.tags = #{test[4]}" do expect(tax_tags).to eq(test[4]) end
         end
         describe :instantiate do
-          MongoMapper.connection.drop_database('tagm8')
+          Tagm8Db.wipe
           tax = Taxonomy.new
           alm = tax.add_album('alm')
           item = Item.new(alm)
@@ -142,7 +144,7 @@ describe Item do
           it "items = ['Name']" do expect(items).to eq(['Name']) end
         end
         describe :initialize do
-          MongoMapper.connection.drop_database('tagm8')
+          Tagm8Db.wipe
           tax = Taxonomy.new
           alm = tax.add_album('alm')
           item = alm.add_item(test[0])
@@ -156,7 +158,7 @@ describe Item do
           it "items = ['Name']" do expect(items).to eq(['Name']) end
         end
         describe :query_tags do
-          MongoMapper.connection.drop_database('tagm8')
+          Tagm8Db.wipe
           tax = Taxonomy.new
           alm = tax.add_album('alm')
           item = alm.add_item(test[0])

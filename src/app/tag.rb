@@ -18,26 +18,21 @@ class Taxonomy < PTaxonomy
   def self.open(name) self.get_by_name(name) end
 
   # create new or open existing taxonomy by name
-  def self.lazy(name)
+  def self.lazy(name,dag='prevent')
     tax = self.open(name)
-    tax = self.new(name) if tax.nil?
+    tax = self.new(name,dag) if tax.nil?
     tax
   end
 
-  def initialize(name='taxonomy')
-    super(name:name,dag:'prevent')
+  def initialize(name='taxonomy',dag='prevent')
+    super(name:name,dag:dag)
     save
   end
 
   def empty?; !has_tag? && !has_root? && !has_folksonomy? end
 
-  def show(item)
-    eval('#{'+item+'}')
-  end
+  def show(item) eval(item) end
 
-  #  attr_reader :dag
-
-  #  def dag=(dag) set_dag(dag) end
   def dag_fix; self.dag = 'fix' end
   def dag_prevent; self.dag = 'prevent' end
   def dag_free; self.dag = 'false' end

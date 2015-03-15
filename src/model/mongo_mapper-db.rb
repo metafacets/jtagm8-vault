@@ -17,10 +17,6 @@ module Tagm8Db
   module_function :open, :wipe
 end
 
-#MongoMapper.connection.drop_database('tagm8')
-#MongoMapper.connection = Mongo::Connection.new('localhost')
-#MongoMapper.database = 'db'
-
 class PTaxonomy
   # PTaxonomy <->> PTag    - manual
   # PTaxonomy <->> PAlbum  - ODM

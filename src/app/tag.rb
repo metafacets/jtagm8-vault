@@ -24,6 +24,10 @@ class Taxonomy < PTaxonomy
     tax
   end
 
+  def self.delete_taxonimies(list)
+    list.each{|name| self.get_by_name(name).delete}
+  end
+
   def initialize(name='taxonomy',dag='prevent')
     super(name:name,dag:dag)
     save

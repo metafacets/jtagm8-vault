@@ -27,6 +27,10 @@ class Album < PAlbum
     save
   end
 
+  def self.delete_list(list)
+    list.each{|name| self.get_by_name(name).delete}
+  end
+
   def add_item(entry=nil)
     unless !entry.is_a? String || entry.nil? || entry.empty?
       Item.new(self).instantiate(entry)

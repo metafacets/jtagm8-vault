@@ -53,7 +53,7 @@ class Facade
   def add_tags(taxonomy_name,tag_syntax)
     begin
       raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-      raise "syntax missing" if tag_syntax.nil? || tag_syntax.empty?
+      raise "syntax missing" if tag_syntax.empty?
       Taxonomy.lazy(taxonomy_name).instantiate(tag_syntax)
       [0,"Tags \"#{tag_syntax}\" added"]
     rescue => e
@@ -61,17 +61,19 @@ class Facade
     end
   end
 
-  def delete_tags(taxonomy_name,list)
+  def delete_tags(taxonomy_name,tag_list,branch=false,details=false)
     begin
       raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-      tax = Taxonomy.lazy(taxonomy_name)
-      list = list.gsub(/\s/,'').split(',')
-      bad = list.map{|name| name unless tax.has_tag?(name)}.join(', ')
-      raise "Tags \"#{bad}\" not found" unless bad.empty?
-      tax.deprecate(list.map{|name| tax.get_lazy_tag(name)})
-      [0,"#{list.size} taxonomies deleted"]
+      raise "list missing" if tag_list.empty?
+      _,list_deleted,count_supplied,count_found,count_deleted = Taxonomy.lazy(taxonomy_name).deprecate(tag_list,branch)
+      if details
+        msg = ''
+        list_deleted.each{|tag| msg += "Tag \"#{tag}\" deleted\n"}
+      end
+      count_found == count_deleted ? deleted = ' and' : deleted = ", #{count_deleted}"
+      [0,"#{msg}#{count_found} of #{count_supplied} supplied tags found#{deleted} deleted"]
     rescue => e
-      [1,"No taxonomies deleted: #{e}"]
+      [1,"Tags not deleted: #{e}"]
     end
   end
 
@@ -141,7 +143,7 @@ def add_album(album_name,taxonomy_name,dag='prevent')
   end
 
 Tagm8Db.open('tagm8-app')
-DRb.start_service('druby://127.0.0.1:61671',Facade.instance)
+DRb.start_service('druby://127.0.0.1:61669',Facade.instance)
 puts 'Listening for connection'
 DRb.thread.join
 

@@ -38,12 +38,7 @@ class PTaxonomy
   end
 
   def list_tags_by_id(ids)
-    names = []
-    ids.each do |id|
-      tag = PTag.first(_id:id.to_s)
-      names << tag.name unless tag.nil?
-    end
-    names
+    ids.map{|id| PTag.first(_id:id.to_s)}.select{|tag| tag.name unless tag.nil?}
   end
 
 #  def get_tag(id)
@@ -127,11 +122,11 @@ class PTaxonomy
   end
 
   def union_folksonomies(folks_to_add)
-    folks_to_add.each{|tag| tag.is_folksonomy = true}
+    folks_to_add.each{|tag| tag.is_folk = true}
   end
 
   def subtract_folksonomies(folks_to_delete)
-    folks_to_delete.each{|tag| tag.is_folksonomy = false}
+    folks_to_delete.each{|tag| tag.is_folk = false}
   end
 
   def count_albums(name=nil)
@@ -167,12 +162,11 @@ class PTag
   end
 
   def get_parents
-    parents.map{|id| PTag.first(_id:id.to_s)}
+    parents.map{|id| PTag.first(_id:id.to_s)}.select{|tag| tag unless tag.nil?}
   end
 
   def has_parent?(tag=nil)
     tags = PTag.first(_id:_id.to_s).parents
-    #puts "** Tag:has_parent? 1: parents=#{parents}, tags_by_name=#{get_taxonomy.get_names_by_id(tags)}, self.name=#{self.name}"
     if tag.nil?
       !tags.empty?
     else
@@ -189,7 +183,7 @@ class PTag
   end
 
   def get_children
-    children.map{|id| PTag.first(_id:id.to_s)}
+    children.map{|id| PTag.first(_id:id.to_s)}.select{|tag| tag unless tag.nil?}
   end
 
   def has_child?(tag=nil)
@@ -298,9 +292,7 @@ class PItem
   end
 
   def union_tags(tags)
-    puts "Items.union_tags 1: self.tags=#{self.tags}, tags=#{tags}"
     self.tags |= tags.map{|tag| tag._id.to_s}
-    puts "Items.union_tags 2: self.tags=#{self.tags}"
   end
 
 end

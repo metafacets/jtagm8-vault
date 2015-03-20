@@ -45,6 +45,7 @@ class Taxonomy < PTaxonomy
   def dag_fix?; self.dag == 'fix' end
 
   def delete_tag(name)
+    # joins parents to children of deleted tag
     if has_tag?(name)
       #puts "Taxonomy.delete_tag: name=#{name}"
       tag = get_tag_by_name(name)
@@ -97,11 +98,19 @@ class Taxonomy < PTaxonomy
     leaves
   end
 
-  def deprecate(tag_ddl)
+  def deprecate(tag_ddl,branch=false)
     Ddl.parse(tag_ddl)
-    tags = Ddl.tags.map {|name| get_lazy_tag(name)}
-    Ddl.tags.each {|name| delete_tag(name)} if Ddl.has_tags?
-    tags
+    tags = Ddl.tags.map {|name| get_tag_by_name(name)}.select{|tag| tag unless tag.nil?}
+    count_supplied = Ddl.tags.size
+    count_found = tags.size
+    tags_deleted = tags
+    list_deleted = list_tags
+    unless tags.empty?
+      branch ? tags.each {|tag| tag.delete_branch} : tags.each {|tag| delete_tag(tag.name)}
+    end
+    tags_deleted -= tags
+    list_deleted -= list_tags
+    [tags_deleted,list_deleted,count_supplied,count_found,list_deleted.size]
   end
 
   def query_items(query)
@@ -224,24 +233,27 @@ class Tag < PTag
   def get_depth(root,branch)
     # walks up branch from self to root returning depth
     # dag support requirs nodes outside branch are ignored
-    if parents.include?(root)
+    if get_parents.include?(root)
       depth = 1
     else
-      parent = (parents & branch).pop
+      parent = (get_parents & branch).pop
       parent.nil? ? depth = 0 : depth = parent.get_depth(root,branch) + 1
     end
     depth
   end
 
   def get_descendents(descendents=[])
-    #puts "Tag.get_descendents: descendents=#{descendents}"
+#    puts "Tag.get_descendents: descendents=#{descendents}"
     childs = get_children
+#    puts "Tag.get_descendents: childs=#{childs}"
     childs.each {|child| descendents |= child.get_descendents(childs)}
     descendents
   end
 
   def delete_descendents
+#    puts "Tag.delete_descendents: self=#{self}"
     descendents = get_descendents
+#    puts "Tag.delete_descendents: descendents=#{descendents}"
     tax = get_taxonomy
     tax.subtract_tags(descendents)
     tax.subtract_roots(descendents)
@@ -254,7 +266,9 @@ class Tag < PTag
   def delete_branch
     # delete self and its descendents
     delete_descendents
-    parent.delete_child(self)
+#    puts "Tag.delete_branch 1"
+    get_parents.each{|parent| parent.delete_child(self)}
+#    puts "Tag.delete_branch 2"
     get_taxonomy.subtract_tags([self])
   end
 

@@ -100,17 +100,10 @@ class Taxonomy < PTaxonomy
 
   def deprecate(tag_ddl,branch=false)
     Ddl.parse(tag_ddl)
-    tags = Ddl.tags.map {|name| get_tag_by_name(name)}.select{|tag| tag unless tag.nil?}
-    count_supplied = Ddl.tags.size
-    count_found = tags.size
+    tags_found = Ddl.tags.map {|name| get_tag_by_name(name)}.select{|tag| tag unless tag.nil?}
     tags_deleted = tags
-    list_deleted = list_tags
-    unless tags.empty?
-      branch ? tags.each {|tag| tag.delete_branch} : tags.each {|tag| delete_tag(tag.name)}
-    end
-    tags_deleted -= tags
-    list_deleted -= list_tags
-    [tags_deleted,list_deleted,count_supplied,count_found,list_deleted.size]
+    branch ? tags_found.each {|tag| tag.delete_branch} : tags_found.each {|tag| delete_tag(tag.name)}
+    tags_deleted-tags
   end
 
   def query_items(query)

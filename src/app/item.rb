@@ -96,8 +96,7 @@ class Item < PItem
       content.scan(/([+|\-|=]?)#([^\s]+)/).each do |op,tag_ddl|
         Debug.show(class:self.class,method:__method__,note:'1',vars:[['op',op],['tag_ddl',tag_ddl]])
         if op == '-'
-          tags_deleted,_,_,_,_ = get_taxonomy.deprecate(tag_ddl)
-          self.tags -= tags_deleted
+          self.tags -= get_taxonomy.deprecate(tag_ddl)
           Debug.show(class:self.class,method:__method__,note:'2a',vars:[['tags',tags],['get_taxonomy.tags',get_taxonomy.tags]])
         else
           leaves = get_taxonomy.instantiate(tag_ddl)

@@ -17,13 +17,18 @@ class Facade
     end
   end
 
-  def delete_taxonomies(list)
+  def delete_taxonomies(list,details=false)
     begin
+      raise "list missing" if list.empty?
       list = list.gsub(/\s/,'').split(',')
-      bad = list.map{|name| name unless Taxonomy.exist?(name)}.join(', ')
-      raise "Taxonomies \"#{bad}\" not found" unless bad.empty?
-      Taxonomy.delete_taxonomies(list)
-      [0,"#{list.size} taxonomies deleted"]
+      found = list.map{|name| name if Taxonomy.exist?(name)}
+      initial = Taxonomy.list
+      Taxonomy.delete_taxonomies(found)
+      deleted = initial-Taxonomy.list
+      msg = ''
+      deleted.each{|name| msg += "Taxonomy \"#{name}\" deleted\n"} if details
+      found.size == deleted.size ? insert = ' and' : insert = ", #{deleted.size}"
+      [0,"#{msg}#{found.size} of #{list.size} supplied taxonomies found#{insert} deleted"]
     rescue => e
       [1,"No taxonomies deleted: #{e}"]
     end
@@ -65,25 +70,67 @@ class Facade
     begin
       raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       raise "list missing" if tag_list.empty?
-      _,list_deleted,count_supplied,count_found,count_deleted = Taxonomy.lazy(taxonomy_name).deprecate(tag_list,branch)
-      if details
-        msg = ''
-        list_deleted.each{|tag| msg += "Tag \"#{tag}\" deleted\n"}
-      end
-      count_found == count_deleted ? deleted = ' and' : deleted = ", #{count_deleted}"
-      [0,"#{msg}#{count_found} of #{count_supplied} supplied tags found#{deleted} deleted"]
+      tax = Taxonomy.lazy(taxonomy_name)
+      list = list.gsub(/\s/,'').split(',')
+      found = list.map{|name| name if tax.has_tag?(name)}
+      initial = tax.list_tags
+      tax.deprecate(found,branch)
+      deleted = initial-tax.list_tags
+      msg = ''
+      deleted.each{|tag| msg += "Tag \"#{tag}\" deleted\n"} if details
+      found.size == deleted.size ? insert = ' and' : insert = ", #{deleted.size}"
+      [0,"#{msg}#{found.size} of #{list.size} supplied tags found#{insert} deleted"]
     rescue => e
       [1,"Tags not deleted: #{e}"]
     end
   end
 
-  def list_tags(taxonomy_name,sort)
+  def list_tags(taxonomy_name,descending=false,hierarchy=false)
     begin
+      show_nested = lambda{|taxonomy,tag_name,descending,depth=0|
+        indent = '   '*depth if depth > 0
+        tree = ["#{indent}#{tag_name}\n"]
+        list_children = taxonomy.get_tag_by_name(tag_name).get_children.map{|child| child.name}.sort
+        list_children.reverse! if descending
+        list_children.each{|child_name| tree += show_nested.call(taxonomy,child_name,descending,depth+1)}
+        tree
+      }
       raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-      res = Taxonomy.lazy(taxonomy_name).list_tags
-      res.sort! if sort == 'asc'
-      res.sort!.reverse! if sort == 'desc'
-      res.empty? ? msg = "No tags found" : msg = "#{res.size} tags found"
+      tax = Taxonomy.lazy(taxonomy_name)
+      unless tax.empty?
+        res = []
+        tags_count = tax.count_tags
+        roots_count = tax.count_roots
+        folks_count = tax.count_folksonomies
+        if hierarchy
+          if roots_count > 0
+            roots_count > 1 ? h_insert = 'ies' : h_insert = 'y'
+            tags_count-folks_count > 1 ? t_insert = 's' : t_insert = ''
+            roots = tax.roots.map{|tag| tag.name}.sort!
+            roots.reverse! if descending
+            roots.each{|root_name| res += show_nested.call(tax,root_name,descending)}
+            msg = "#{roots_count} hierarch#{h_insert} found containing #{tags_count-folks_count} tag#{t_insert}\n"
+          else
+            msg = "No tag hierarchies found\n"
+          end
+          if folks_count > 0
+            folks_count > 1 ? t_insert = 's' : t_insert = ''
+            folks = tax.folksonomies.map{|tag| tag.name}.sort!
+            folks.reverse! if descending
+            res += folks
+            msg += "#{folks_count} folksonomy tag#{t_insert} found\n"
+          else
+            msg += "No folksonomy tags found\n"
+          end
+        else
+          res = tax.list_tags.sort!
+          res.reverse! if descending
+        end
+        tags_count > 1 ? t_insert = 's' : t_insert = ''
+        msg += "#{tags_count} tag#{t_insert} found in total"
+      else
+        msg = "No tags found"
+      end
       [0,msg] + res
     rescue => e
       [1,e]

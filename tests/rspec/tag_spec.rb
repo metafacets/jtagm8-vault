@@ -611,12 +611,12 @@ describe 'Taxonomy' do
   end
   context 'dag integrity' do
     context 'prevent recursion (:a <-+-> :a)' do
-      [:dag_fix,:dag_prevent].each do |context|
-        context context do
+      ['fix','prevent'].each do |context|
+        context "deg='#{context}'" do
           before(:all) do
             Tagm8Db.wipe
             @tax = Taxonomy.new
-            @tax.send(context)
+            @tax.set_dag(context)
             @tax.add_tag(:a,:a)
             @a =@tax.get_tag_by_name(:a)
           end
@@ -629,11 +629,11 @@ describe 'Taxonomy' do
       end
     end
     context 'prevent reflection (:a -> :b -+-> :a)' do
-      context ':dag_fix (:a -x-> :b -> :a)' do
+      context "dag='fix' (:a -x-> :b -> :a)" do
         before(:all) do
           Tagm8Db.wipe
           @tax = Taxonomy.new
-          @tax.dag_fix
+          @tax.set_dag('fix')
           @tax.add_tag(:a,:b)
           @tax.add_tag(:b,:a)
           @a =@tax.get_tag_by_name(:a)
@@ -648,11 +648,11 @@ describe 'Taxonomy' do
         it ':b has no children' do expect(@b).to_not have_child end
         it ':a is root' do expect(@a).to be_root end
       end
-      context ':dag_prevent (:a -> :b -x-> :a)' do
+      context "dag='prevent' (:a -> :b -x-> :a)" do
         before(:all) do
           Tagm8Db.wipe
           @tax = Taxonomy.new
-          @tax.dag_prevent
+          @tax.set_dag('prevent')
           @tax.add_tag(:a,:b)
           @tax.add_tag(:b,:a)
           @a =@tax.get_tag_by_name(:a)
@@ -669,11 +669,11 @@ describe 'Taxonomy' do
       end
     end
     context 'prevent looping (:a -> :b -> :c -+-> :a)' do
-      context ':dag_fix (:a -x-> :b -> :c -> :a)' do
+      context "dag='fix' (:a -x-> :b -> :c -> :a)" do
         before(:all) do
           Tagm8Db.wipe
           @tax = Taxonomy.new
-          @tax.dag_fix
+          @tax.set_dag('fix')
           @tax.add_tag(:a,:b)
           @tax.add_tag(:b,:c)
           @tax.add_tag(:c,:a)
@@ -692,11 +692,11 @@ describe 'Taxonomy' do
         it 'b has no child' do expect(@b).to_not have_child end
         it 'a is root' do expect(@a).to be_root end
       end
-      context ':dag_prevent (:a -> :b -> :c -x-> :a)' do
+      context "dag='prevent' (:a -> :b -> :c -x-> :a)" do
         before(:all) do
           Tagm8Db.wipe
           @tax = Taxonomy.new
-          @tax.dag_prevent
+          @tax.set_dag('prevent')
           @tax.add_tag(:a,:b)
           @tax.add_tag(:b,:c)
           @tax.add_tag(:c,:a)
@@ -717,11 +717,11 @@ describe 'Taxonomy' do
       end
     end
     context 'prevent selective looping (:b2 <- :a -> :b1 -> :c1 -+-> :a)' do
-      context ':dag_fix (:a -x-> :b1 -> :c1 -> :a -> :b2)' do
+      context "dag='fix' (:a -x-> :b1 -> :c1 -> :a -> :b2)" do
         before(:all) do
           Tagm8Db.wipe
           @tax = Taxonomy.new
-          @tax.dag_fix
+          @tax.set_dag('fix')
           @tax.add_tag(:a,:b1)
           @tax.add_tag(:a,:b2)
           @tax.add_tag(:b1,:c1)
@@ -744,11 +744,11 @@ describe 'Taxonomy' do
         it ':b1 has no child' do expect(@b1).to_not have_child end
         it ':b2 is root' do expect(@b2).to be_root end
       end
-      context ':dag_prevent (b2 <- :a -> :b1 -> :c1)' do
+      context "dag='prevent' (b2 <- :a -> :b1 -> :c1)" do
         before(:all) do
           Tagm8Db.wipe
           @tax = Taxonomy.new
-          @tax.dag_prevent
+          @tax.set_dag('prevent')
           @tax.add_tag(:a,:b1)
           @tax.add_tag(:a,:b2)
           @tax.add_tag(:b1,:c1)
@@ -781,7 +781,7 @@ describe 'Taxonomy' do
           before(:all) do
             Tagm8Db.wipe
             @tax = Taxonomy.new
-            @tax.dag_prevent
+            @tax.set_dag('prevent')
             @tax.instantiate(ddl)
           end
           it 'taxonomy empty' do expect(@tax.count_tags).to eq(0) end
@@ -796,7 +796,7 @@ describe 'Taxonomy' do
           before(:all) do
             Tagm8Db.wipe
             @tax = Taxonomy.new
-            @tax.dag_prevent
+            @tax.set_dag('prevent')
             @tax.instantiate(ddl)
             @a =@tax.get_tag_by_name(:a)
           end
@@ -813,7 +813,7 @@ describe 'Taxonomy' do
           before(:all) do
             Tagm8Db.wipe
             @tax = Taxonomy.new
-            @tax.dag_prevent
+            @tax.set_dag('prevent')
             @tax.instantiate(ddl)
             @a =@tax.get_tag_by_name(:a)
             @b =@tax.get_tag_by_name(:b)
@@ -832,7 +832,7 @@ describe 'Taxonomy' do
           before(:all) do
             Tagm8Db.wipe
             @tax = Taxonomy.new
-            @tax.dag_prevent
+            @tax.set_dag('prevent')
             @tax.instantiate(ddl)
             @a =@tax.get_tag_by_name(:a)
             @b =@tax.get_tag_by_name(:b)
@@ -851,7 +851,7 @@ describe 'Taxonomy' do
           before(:all) do
             Tagm8Db.wipe
             @tax = Taxonomy.new
-            @tax.dag_prevent
+            @tax.set_dag('prevent')
             @tax.instantiate(ddl)
             @a =@tax.get_tag_by_name(:a)
             @b =@tax.get_tag_by_name(:b)
@@ -873,7 +873,7 @@ describe 'Taxonomy' do
           before(:all) do
             Tagm8Db.wipe
             @tax = Taxonomy.new
-            @tax.dag_prevent
+            @tax.set_dag('prevent')
             @tax.instantiate(ddl)
             @a =@tax.get_tag_by_name(:a)
             @b =@tax.get_tag_by_name(:b)
@@ -895,7 +895,7 @@ describe 'Taxonomy' do
           before(:all) do
             Tagm8Db.wipe
             @tax = Taxonomy.new
-            @tax.dag_prevent
+            @tax.set_dag('prevent')
             @tax.instantiate(ddl)
           end
           it 'taxonomy empty' do expect(@tax.count_tags).to eq(0) end
@@ -908,7 +908,7 @@ describe 'Taxonomy' do
           before(:all) do
             Tagm8Db.wipe
             @tax = Taxonomy.new
-            @tax.dag_prevent
+            @tax.set_dag('prevent')
             @tax.instantiate(ddl)
             @a =@tax.get_tag_by_name(:a)
             @b =@tax.get_tag_by_name(:b)
@@ -932,7 +932,7 @@ describe 'Taxonomy' do
           before(:all) do
             Tagm8Db.wipe
             @tax = Taxonomy.new
-            @tax.dag_prevent
+            @tax.set_dag('prevent')
             @tax.instantiate(ddl)
             @a =@tax.get_tag_by_name(:a)
             @b =@tax.get_tag_by_name(:b)
@@ -955,7 +955,7 @@ describe 'Taxonomy' do
           before(:all) do
             Tagm8Db.wipe
             @tax = Taxonomy.new
-            @tax.dag_prevent
+            @tax.set_dag('prevent')
             @tax.instantiate(ddl)
             @a1 =@tax.get_tag_by_name(:a1)
             @a2 =@tax.get_tag_by_name(:a2)
@@ -984,7 +984,7 @@ describe 'Taxonomy' do
           before(:all) do
             Tagm8Db.wipe
             @tax = Taxonomy.new
-            @tax.dag_prevent
+            @tax.set_dag('prevent')
             @tax.instantiate(ddl)
             @a =@tax.get_tag_by_name(:a)
             @b =@tax.get_tag_by_name(:b)
@@ -1009,7 +1009,7 @@ describe 'Taxonomy' do
           before(:all) do
             Tagm8Db.wipe
             @tax = Taxonomy.new
-            @tax.dag_prevent
+            @tax.set_dag('prevent')
             @tax.instantiate(ddl)
             @a1 =@tax.get_tag_by_name(:a1)
             @a2 =@tax.get_tag_by_name(:a2)
@@ -1041,7 +1041,7 @@ describe 'Taxonomy' do
           before(:all) do
             Tagm8Db.wipe
             @tax = Taxonomy.new
-            @tax.dag_prevent
+            @tax.set_dag('prevent')
             @tax.instantiate(ddl)
             @a =@tax.get_tag_by_name(:a)
             @b1 =@tax.get_tag_by_name(:b1)
@@ -1075,7 +1075,7 @@ describe 'Taxonomy' do
           before(:all) do
             Tagm8Db.wipe
             @tax = Taxonomy.new
-            @tax.dag_prevent
+            @tax.set_dag('prevent')
             @tax.instantiate(ddl)
             @a =@tax.get_tag_by_name(:a)
             @b1 =@tax.get_tag_by_name(:b1)
@@ -1109,7 +1109,7 @@ describe 'Taxonomy' do
           before(:all) do
             Tagm8Db.wipe
             @tax = Taxonomy.new
-            @tax.dag_prevent
+            @tax.set_dag('prevent')
             @tax.instantiate(ddl)
             @animal = @tax.get_tag_by_name(:animal)
             @fish = @tax.get_tag_by_name(:fish)

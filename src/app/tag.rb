@@ -37,12 +37,11 @@ class Taxonomy < PTaxonomy
 
   def show(item) eval(item) end
 
-  def dag_fix; self.dag = 'fix' end
-  def dag_prevent; self.dag = 'prevent' end
-  def dag_free; self.dag = 'false' end
   def dag?; self.dag != 'false' end
-  def dag_prevent?; self.dag == 'prevent' end
-  def dag_fix?; self.dag == 'fix' end
+  def set_dag(dag)
+    self.dag = dag if ['prevent','fix','false'].include?(dag)
+    self.save
+  end
 
   def delete_tag(name)
     # joins parents to children of deleted tag
@@ -166,7 +165,7 @@ class Taxonomy < PTaxonomy
           Debug.show(class:self.class,method:__method__,note:'1',vars:[['name',child.name],['parent',name]])
           if dag? && ancestors.include?(child)
             #puts "Taxonomy.link.link_children: child=#{child}, ancestors=#{ancestors}, dag_prevent?=#{dag_prevent?}"
-            if dag_prevent?
+            if dag == 'prevent'
               ctags -= [child]
             else
               (parent.get_parents & child.get_descendents+[child]).each {|grand_parent| parent.delete_parent(grand_parent)}

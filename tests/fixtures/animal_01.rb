@@ -1,7 +1,7 @@
 module AnimalTaxonomy
   def animal_taxonomy(instantiate=true)
     tax = Taxonomy.new
-    tax.dag_fix
+    tax.set_dag('fix')
     if instantiate
       tax.instantiate(':mouse<:animal')
       tax.instantiate('[:cat,:dog]<:mammal')

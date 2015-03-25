@@ -12,7 +12,7 @@ class Facade
       Taxonomy.new(taxonomy_name,dag)
       [0,"Taxonomy \"#{taxonomy_name}\" added",'']
     rescue => e
-      [1,"Taxonomy \"#{taxonomy_name}\" not added: #{e}"]
+      [1,"add_taxonomy \"#{taxonomy_name}\" aborted: #{e}"]
     end
   end
 
@@ -29,7 +29,7 @@ class Facade
       found.size == deleted.size ? insert = ' and' : insert = ", #{deleted.size}"
       [0,"#{msg}#{found.size} of #{list.size} supplied taxonomies found#{insert} deleted"]
     rescue => e
-      [1,"No taxonomies deleted: #{e}"]
+      [1,"delete_taxonomies aborted: #{e}"]
     end
   end
 
@@ -40,7 +40,7 @@ class Facade
       res = Taxonomy.list.sort
       res.reverse! if reverse
       if details
-        longest = res.group_by(&:size).max.last.last.size
+        longest = res.max_by(&:length).size
         res.each_with_index do |name,i|
           tax = Taxonomy.get_by_name(name)
           if i%10 > 0
@@ -52,7 +52,7 @@ class Facade
       end
       [0,"#{c} taxonomies found"] + res
     rescue => e
-      [1,e]
+      [1,"list_taxonomies aborted: #{e}"]
     end
   end
 
@@ -83,7 +83,7 @@ class Facade
       raise "dag = #{confirmed}" if confirmed != dag
       [0,"dag_#{dag} confirmed"]
     rescue => e
-      [1,"dag_#{dag} unsuccessful: #{e}"]
+      [1,"dag_#{dag} aborted: #{e}"]
     end
   end
 
@@ -94,7 +94,7 @@ class Facade
       Taxonomy.lazy(taxonomy_name).instantiate(tag_syntax)
       [0,"Tags \"#{tag_syntax}\" added"]
     rescue => e
-      [1,"Tags not added: #{e}"]
+      [1,"add_tags aborted: #{e}"]
     end
   end
 
@@ -113,7 +113,7 @@ class Facade
       found.size == deleted.size ? insert = ' and' : insert = ", #{deleted.size}"
       [0,"#{msg}#{found.size} of #{list.size} supplied tags found#{insert} deleted"]
     rescue => e
-      [1,"Tags not deleted: #{e}"]
+      [1,"delete_tags aborted: #{e}"]
     end
   end
 
@@ -169,34 +169,39 @@ class Facade
     end
   end
 
-  def ancestors(taxonomy_name,list)
-    # get list of ancestors by name common to a list of tags
+  def count_tags(taxonomy_name)
+    begin
+      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      [0,'',Taxonomy.lazy(taxonomy_name).count_tags]
+    rescue => e
+      [1,"count_tags aborted: #{e}"]
+    end
+  end
+
+  def list_genealogy(genealogy,taxonomy_name,list,reverse=false)
+    # list ancestors|descendents common to a list of tags
     begin
       raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       tax = Taxonomy.lazy(taxonomy_name)
       list = list.gsub(/\s/,'').split(',')
       list.size > 1 ? common = 'common ' : common = ''
-      bad = list.map{|name| name unless tax.has_tag?(name)}.join(', ')
-      raise "Tags \"#{bad}\" not found" unless bad.empty?
-      # get [[tag1_ancestors],..[tagn_ancestor]]
-      ancestors = list.map{|name| tax.get_lazy_tag(name).get_ancestors}
-      # get [[tag1_ancestors]&[..]&[tagn_ancestor]]
-      ancestors = ancestors.inject(:&)
-      # get [common_ancestor_names]
-      res = ancestors.map{|ancestor| ancestor.name}
-      res.empty? ? msg = "No #{common}ancestors found" : msg = "#{res.size} #{common}ancestors found"
+      bad = list.select{|name| name unless tax.has_tag?(name)}
+      unless bad.empty?
+        bad.size > 1 ? insert = 's' : insert = ''
+        raise "Tag#{insert} \"#{bad.join(', ')}\" not found"
+      end
+      # get [[tag1_relatives],..[tagn_relatives]]
+      relatives = list.map{|name| tax.get_lazy_tag(name).send("get_#{genealogy}")}
+      # get [[tag1_relatives]&[..]&[tagn_relatives]]
+      relatives = relatives.inject(:&)
+      # get [common_relative_names]
+      res = relatives.map{|relative| relative.name}.sort!
+      res.reverse! if reverse
+      res.size > 1 ? insert = 's' : insert = ''
+      res.empty? ? msg = "No #{common}#{genealogy} found" : msg = "#{res.size} #{common}#{genealogy[0...-1]}#{insert} found"
       [0,msg] + res
     rescue => e
-      [1,"Getting ancestors aborted: #{e}"]
-    end
-  end
-
-  def descendents(tag_name)
-    # to-do support tag-name-list
-    unless taxonomy.nil?
-      unless taxonomy.has_tag?(tag_name)
-        taxonomy.get_tag(tag_name).get_descendents
-      end
+      [1,"list_#{genealogy} aborted: #{e}"]
     end
   end
 

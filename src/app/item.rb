@@ -27,6 +27,11 @@ class Album < PAlbum
     save
   end
 
+  def rename(name)
+    self.name = name
+    self.save
+  end
+
   def self.delete_list(list)
     list.each{|name| self.get_by_name(name).delete}
   end
@@ -58,6 +63,11 @@ class Item < PItem
 
   def initialize(album)
     super(date:Time.now,album:album)
+  end
+
+  def rename(name)
+    self.name = name
+    self.save
   end
 
   def instantiate(entry)

@@ -5,6 +5,8 @@ class Facade
   attr_accessor :taxonomy, :album
   include Singleton
 
+  def name_ok?(name) name =~ /\A\p{Alnum}+\z/ end
+
   def add_taxonomy(taxonomy_name,dag='prevent')
     begin
       raise "name taken" if Taxonomy.exists?(taxonomy_name)
@@ -16,6 +18,19 @@ class Facade
     end
   end
 
+  def rename_taxonomy(taxonomy_name,new_name)
+    begin
+      raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      raise "taxonomy \"#{new_name}\" invalid - use alphanumeric characters only" unless name_ok?(new_name)
+      tax = Taxonomy.lazy(taxonomy_name)
+      tax.rename(new_name)
+      raise "name is \"#{tax.name}\"" unless tax.name == new_name
+      [0,"Taxonomy\"#{taxonomy_name}\" renamed to \"#{new_name}\"",'']
+    rescue => e
+      [1,"rename_taxonomy \"#{taxonomy_name}\" failed: #{e}"]
+    end
+  end
+
   def delete_taxonomies(list,details=false)
     begin
       raise "list missing" if list.empty?
@@ -24,12 +39,15 @@ class Facade
       initial = Taxonomy.list
       Taxonomy.delete_taxonomies(found)
       deleted = initial-Taxonomy.list
+      raise "No taxonomies deleted" if deleted.empty?
       msg = ''
       deleted.each{|name| msg += "Taxonomy \"#{name}\" deleted\n"} if details
+      remaining = (Taxonomy.list & found).map{|name| "\"#{name}\""}
+      remaining.empty? ? remaining_insert = '' : remaining_insert = ", #{remaining.join(', ')} not deleted"
       found.size == deleted.size ? insert = ' and' : insert = ", #{deleted.size}"
-      [0,"#{msg}#{found.size} of #{list.size} supplied taxonomies found#{insert} deleted"]
+      [0,"#{msg}#{found.size} of #{list.size} supplied taxonomies found#{insert} deleted#{remaining_insert}"]
     rescue => e
-      [1,"delete_taxonomies aborted: #{e}"]
+      [1,"delete_taxonomies failed: #{e}"]
     end
   end
 
@@ -52,7 +70,7 @@ class Facade
       end
       [0,"#{c} taxonomies found"] + res
     rescue => e
-      [1,"list_taxonomies aborted: #{e}"]
+      [1,"list_taxonomies failed: #{e}"]
     end
   end
 
@@ -83,7 +101,7 @@ class Facade
       raise "dag = #{confirmed}" if confirmed != dag
       [0,"dag_#{dag} confirmed"]
     rescue => e
-      [1,"dag_#{dag} aborted: #{e}"]
+      [1,"dag_#{dag} failed: #{e}"]
     end
   end
 
@@ -94,7 +112,7 @@ class Facade
       Taxonomy.lazy(taxonomy_name).instantiate(tag_syntax)
       [0,"Tags \"#{tag_syntax}\" added"]
     rescue => e
-      [1,"add_tags aborted: #{e}"]
+      [1,"add_tags failed: #{e}"]
     end
   end
 
@@ -113,7 +131,7 @@ class Facade
       found.size == deleted.size ? insert = ' and' : insert = ", #{deleted.size}"
       [0,"#{msg}#{found.size} of #{list.size} supplied tags found#{insert} deleted"]
     rescue => e
-      [1,"delete_tags aborted: #{e}"]
+      [1,"delete_tags failed: #{e}"]
     end
   end
 
@@ -165,7 +183,7 @@ class Facade
       end
       [0,msg] + res
     rescue => e
-      [1,e]
+      [1,"list_tags failed: #{e}"]
     end
   end
 
@@ -174,12 +192,12 @@ class Facade
       raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       [0,'',Taxonomy.lazy(taxonomy_name).count_tags]
     rescue => e
-      [1,"count_tags aborted: #{e}"]
+      [1,"count_tags failed: #{e}"]
     end
   end
 
   def list_genealogy(genealogy,taxonomy_name,list,reverse=false)
-    # list ancestors|descendents common to a list of tags
+    # supports list_ancestors and list_descendents
     begin
       raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       tax = Taxonomy.lazy(taxonomy_name)
@@ -201,7 +219,7 @@ class Facade
       res.empty? ? msg = "No #{common}#{genealogy} found" : msg = "#{res.size} #{common}#{genealogy[0...-1]}#{insert} found"
       [0,msg] + res
     rescue => e
-      [1,"list_#{genealogy} aborted: #{e}"]
+      [1,"list_#{genealogy} failed: #{e}"]
     end
   end
 

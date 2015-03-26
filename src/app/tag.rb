@@ -43,6 +43,11 @@ class Taxonomy < PTaxonomy
     self.save
   end
 
+  def rename(name)
+    self.name = name
+    self.save
+  end
+
   def delete_tag(name)
     # joins parents to children of deleted tag
     if has_tag?(name)
@@ -200,6 +205,11 @@ class Tag < PTag
   def initialize(name,tax)
     super(name:name,is_root:false,is_folk:true,taxonomy:tax._id)
     save
+  end
+
+  def rename(name)
+    self.name = name
+    self.save
   end
 
   def delete_parent(parent)

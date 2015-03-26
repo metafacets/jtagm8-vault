@@ -5,27 +5,29 @@ class Facade
   attr_accessor :taxonomy, :album
   include Singleton
 
-  def name_ok?(name) name =~ /\A\p{Alnum}+\z/ end
+  def name_ok?(name) name =~ /[A-Za-z0-9_]+/ end
 
   def add_taxonomy(taxonomy_name,dag='prevent')
     begin
       raise "name taken" if Taxonomy.exists?(taxonomy_name)
+      raise "\"#{taxonomy_name}\" invalid name - use alphanumeric characters only" unless name_ok?(taxonomy_name)
       raise "dag \"#{dag}\" invalid - use prevent, fix or free" unless ['prevent','fix','free'].include?(dag)
       Taxonomy.new(taxonomy_name,dag)
+      raise "taxonomy \"#{taxonomy_name}\" remains non-existent" unless Taxonomy.exists?(taxonomy_name)
       [0,"Taxonomy \"#{taxonomy_name}\" added",'']
     rescue => e
-      [1,"add_taxonomy \"#{taxonomy_name}\" aborted: #{e}"]
+      [1,"add_taxonomy \"#{taxonomy_name}\" failed: #{e}"]
     end
   end
 
   def rename_taxonomy(taxonomy_name,new_name)
     begin
       raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-      raise "taxonomy \"#{new_name}\" invalid - use alphanumeric characters only" unless name_ok?(new_name)
-      tax = Taxonomy.lazy(taxonomy_name)
+      raise "\"#{new_name}\" invalid name - use alphanumeric characters only" unless name_ok?(new_name)
+      tax = Taxonomy.get_by_name(taxonomy_name)
       tax.rename(new_name)
       raise "name is \"#{tax.name}\"" unless tax.name == new_name
-      [0,"Taxonomy\"#{taxonomy_name}\" renamed to \"#{new_name}\"",'']
+      [0,"Taxonomy renamed from \"#{taxonomy_name}\" to \"#{new_name}\""]
     rescue => e
       [1,"rename_taxonomy \"#{taxonomy_name}\" failed: #{e}"]
     end
@@ -62,9 +64,9 @@ class Facade
         res.each_with_index do |name,i|
           tax = Taxonomy.get_by_name(name)
           if i%10 > 0
-            res[i] = "%-#{longest}s %-8s %3s      %2s       %3s       %2s       " % [name,tax.dag,tax.count_tags,tax.count_roots,tax.count_folksonomies,tax.count_albums]
+            res[i] = "%-#{longest}s %-8s %3s      %2s       %3s       %5s links %2s       " % [name,tax.dag,tax.count_tags,tax.count_roots,tax.count_folksonomies,tax.count_links,tax.count_albums]
           else
-            res[i] = "%-#{longest}s %-8s %3s tags %2s roots %3s folks %2s albums" % [name,tax.dag,tax.count_tags,tax.count_roots,tax.count_folksonomies,tax.count_albums]
+            res[i] = "%-#{longest}s %-8s %3s tags %2s roots %3s folks %5s links %2s albums" % [name,tax.dag,tax.count_tags,tax.count_roots,tax.count_folksonomies,tax.count_links,tax.count_albums]
           end
         end
       end
@@ -109,10 +111,35 @@ class Facade
     begin
       raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       raise "syntax missing" if tag_syntax.empty?
-      Taxonomy.lazy(taxonomy_name).instantiate(tag_syntax)
-      [0,"Tags \"#{tag_syntax}\" added"]
+      tax = Taxonomy.get_by_name(taxonomy_name)
+      tags_before = tax.list_tags
+      links_before = tax.count_links
+      tax.instantiate(tag_syntax)
+      tags_added = (tax.list_tags-tags_before).sort.map{|name| "\"#{name}\""}
+      tags_added.size == 1 ? t_insert = '' : t_insert = 's'
+      tags_added.size > 0 ? t_insert = "#{tags_added.size} tag#{t_insert} #{tags_added.join(', ')}" : t_insert = 'no new tags'
+      puts "Facade.add_tags: links_before=#{links_before}, links_now=#{tax.count_links}"
+      links_added = tax.count_links-links_before
+      links_added == 1 ? l_insert = '' : l_insert = 's'
+      links_added > 0 ? l_insert = "#{links_added} link#{l_insert} added" : l_insert = 'no new links added'
+      [0,"add_tags \"#{tag_syntax}\" successful, #{t_insert} and #{l_insert}"]
     rescue => e
       [1,"add_tags failed: #{e}"]
+    end
+  end
+
+  def rename_tag(taxonomy_name,tag_name,new_name)
+    begin
+      raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      tax = Taxonomy.get_by_name(taxonomy_name)
+      raise "tag \"#{tag_name}\" not found" unless tax.has_tag?(tag_name)
+      raise "\"#{new_name}\" invalid name - use alphanumeric characters only" unless name_ok?(new_name)
+      tag = tax.get_tag_by_name(tag_name)
+      tag.rename(new_name)
+      raise "name is \"#{tag.name}\"" unless tag.name == new_name
+      [0,"Tag renamed from \"#{tag_name}\" to \"#{new_name}\""]
+    rescue => e
+      [1,"rename_taxonomy \"#{tag_name}\" failed: #{e}"]
     end
   end
 
@@ -159,7 +186,9 @@ class Facade
             roots = tax.roots.map{|tag| tag.name}.sort!
             roots.reverse! if reverse
             roots.each{|root_name| res += show_nested.call(tax,root_name,reverse)}
-            msg = "#{roots_count} hierarch#{h_insert} found containing #{tags_count-folks_count} tag#{t_insert}\n"
+            links_count = tax.count_links
+            links_count > 1 ? l_insert = 's' : l_insert = ''
+            msg = "#{roots_count} hierarch#{h_insert} found containing #{tags_count-folks_count} tag#{t_insert} and #{links_count} link#{l_insert}\n"
           else
             msg = "No tag hierarchies found\n"
           end
@@ -175,6 +204,7 @@ class Facade
         else
           res = tax.list_tags.sort!
           res.reverse! if reverse
+          msg = ''
         end
         tags_count > 1 ? t_insert = 's' : t_insert = ''
         msg += "#{tags_count} tag#{t_insert} found in total"
@@ -193,6 +223,33 @@ class Facade
       [0,'',Taxonomy.lazy(taxonomy_name).count_tags]
     rescue => e
       [1,"count_tags failed: #{e}"]
+    end
+  end
+
+  def count_links(taxonomy_name)
+    begin
+      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      [0,'',Taxonomy.lazy(taxonomy_name).count_links]
+    rescue => e
+      [1,"count_links failed: #{e}"]
+    end
+  end
+
+  def count_roots(taxonomy_name)
+    begin
+      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      [0,'',Taxonomy.lazy(taxonomy_name).count_roots]
+    rescue => e
+      [1,"count_roots failed: #{e}"]
+    end
+  end
+
+  def count_folksonomies(taxonomy_name)
+    begin
+      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      [0,'',Taxonomy.lazy(taxonomy_name).count_folksonomies]
+    rescue => e
+      [1,"count_folksonomies failed: #{e}"]
     end
   end
 
@@ -227,6 +284,19 @@ class Facade
     Album.new(album_name,Taxonomy.lazy(taxonomy_name,dag)) if !Album.exists?(album_name) && Taxonomy.exists?(taxonomy_name)
   end
 
+  def rename_album(album_name,new_name)
+    begin
+      raise "album \"#{album_name}\" not found" unless Album.exists?(album_name)
+      raise "\"#{new_name}\" invalid name - use alphanumeric characters only" unless name_ok?(new_name)
+      album = Album.get_by_name(album_name)
+      album.rename(new_name)
+      raise "name is \"#{album.name}\"" unless album.name == new_name
+      [0,"Album renamed from \"#{album_name}\" to \"#{new_name}\""]
+    rescue => e
+      [1,"rename_album \"#{album_name}\" failed: #{e}"]
+    end
+  end
+
   def list_all_albums
     Album.list
   end
@@ -241,4 +311,21 @@ class Facade
   def count_albums(taxonomy_name=nil)
     taxonomy.nil? ? Album.count_albums : Taxonomy.lazy(taxonomy_name).count_albums if Taxonomy.exists?(taxonomy_name)
   end
+
+  def rename_item(album_name,item_name,new_name)
+    begin
+      raise "album \"#{album_name}\" not found" unless Album.exists?(album_name)
+      album = Album.get_by_name(album_name)
+      raise "item \"#{item_name}\" not found" unless album.has_item?(item_name)
+      raise "\"#{new_name}\" invalid name - use alphanumeric characters only" unless name_ok?(new_name)
+      item = album.get_item_by_name(item_name)
+      item.rename(new_name)
+      raise "name is \"#{item.name}\"" unless item.name == new_name
+      [0,"Item renamed from \"#{item_name}\" to \"#{new_name}\""]
+    rescue => e
+      [1,"rename_item \"#{item_name}\" failed: #{e}"]
+    end
+  end
+
+
 end

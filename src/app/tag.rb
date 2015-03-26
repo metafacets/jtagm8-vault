@@ -28,6 +28,13 @@ class Taxonomy < PTaxonomy
     list.each{|name| self.get_by_name(name).delete}
   end
 
+  def count_links
+    link_count = 0
+    roots.each{|root| link_count += root.count_links}
+    link_count
+#    roots.inject{|link_count,root| link_count + root.count_links}
+  end
+
   def initialize(name='taxonomy',dag='prevent')
     super(name:name,dag:dag)
     save
@@ -244,12 +251,27 @@ class Tag < PTag
     depth
   end
 
-  def get_descendents(descendents=[])
+  def get_descendents
+    descendents,_ = collate_descendents
+    descendents
+  end
+
+  def count_links
+    _,link_count = collate_descendents
+    link_count
+  end
+
+  def collate_descendents(descendents=[])
 #    puts "Tag.get_descendents: descendents=#{descendents}"
     childs = get_children
+    link_count = childs.size
 #    puts "Tag.get_descendents: childs=#{childs}"
-    childs.each {|child| descendents |= child.get_descendents(childs)}
-    descendents
+    childs.each do |child|
+      child_descendents,child_link_count = child.collate_descendents(childs)
+      descendents |= child_descendents
+      link_count += child_link_count
+    end
+    [descendents,link_count]
   end
 
   def delete_descendents

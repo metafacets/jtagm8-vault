@@ -252,6 +252,10 @@ class PAlbum
     PAlbum.all.map {|alm| alm.name}
   end
 
+  def get_item_by_name(name)
+    PItem.first(album:self._id.to_s,name:name)
+  end
+
   def count_items(name=nil)
     if name.nil?
       items.count

@@ -44,6 +44,15 @@ class Album < PAlbum
     end
   end
 
+  def delete_items(item_list)
+    found = list_items&item_list
+    found.each do |item_name|
+      item = get_item_by_name(item_name)
+      item.tags.each{|tag| tag.subtract_items([self])}
+      item.delete
+    end
+  end
+
   def has_item?(name=nil) count_items(name) > 0 end
 
   def query_items(query)
@@ -106,7 +115,7 @@ class Item < PItem
       content.scan(/([+|\-|=]?)#([^\s]+)/).each do |op,tag_ddl|
         Debug.show(class:self.class,method:__method__,note:'1',vars:[['op',op],['tag_ddl',tag_ddl]])
         if op == '-'
-          self.tags -= get_taxonomy.deprecate(tag_ddl)
+          self.tags -= get_taxonomy.exstantiate(tag_ddl)
           Debug.show(class:self.class,method:__method__,note:'2a',vars:[['tags',tags],['get_taxonomy.tags',get_taxonomy.tags]])
         else
           leaves = get_taxonomy.instantiate(tag_ddl)

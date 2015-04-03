@@ -109,12 +109,15 @@ class Taxonomy < PTaxonomy
     leaves
   end
 
-  def deprecate(tag_ddl,branch=false)
+  def exstantiate(tag_ddl,branch=false,report=false)
     Ddl.parse(tag_ddl)
-    tags_found = Ddl.tags.map {|name| get_tag_by_name(name)}.select{|tag| tag unless tag.nil?}
-    tags_deleted = tags
-    branch ? tags_found.each {|tag| tag.delete_branch} : tags_found.each {|tag| delete_tag(tag.name)}
-    tags_deleted-tags
+    found = Ddl.tags.map {|name| get_tag_by_name(name)}.select{|tag| tag unless tag.nil?}
+    before = tags
+    before_list = list_tags if report
+    branch ? found.each{|tag| tag.delete_branch} : found.each {|tag| delete_tag(tag.name)}
+    deleted = tags-before
+    # [supplied_count,found_count,deleted_count,deleted_tags,deleted_list]
+    report ? [Ddl.tags.size,found.size,deleted.size,list_tags-before_list] : deleted
   end
 
   def query_items(query)
@@ -202,6 +205,15 @@ class Taxonomy < PTaxonomy
 
   def add_album(name)
     Album.new(name,self)
+  end
+
+  def delete_albums(album_list)
+    found = list_albums&album_list
+    found.each do |album_name|
+      album = Album.get_by_name(album_name)
+      album.delete_items(album.list_items)
+      album.delete
+    end
   end
 
   def has_album?(name=nil) count_albums(name) > 0 end

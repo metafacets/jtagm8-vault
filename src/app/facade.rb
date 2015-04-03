@@ -27,7 +27,7 @@ class Facade
       tax = Taxonomy.get_by_name(taxonomy_name)
       tax.rename(new_name)
       raise "name is \"#{tax.name}\"" unless tax.name == new_name
-      [0,"Taxonomy renamed from \"#{taxonomy_name}\" to \"#{new_name}\""]
+      [0,"Taxonomy \"#{taxonomy_name}\" renamed to \"#{new_name}\""]
     rescue => e
       [1,"rename_taxonomy \"#{taxonomy_name}\" failed: #{e}"]
     end
@@ -56,7 +56,7 @@ class Facade
   def list_taxonomies(reverse=false,details=false)
     begin
       c = Taxonomy.count
-      raise "No taxonomies found" if c < 1
+      raise "No taxonomies exist" if c < 1
       res = Taxonomy.list.sort
       res.reverse! if reverse
       if details
@@ -101,30 +101,46 @@ class Facade
       tax.set_dag(dag)
       confirmed = tax.dag
       raise "dag = #{confirmed}" if confirmed != dag
-      [0,"dag_#{dag} confirmed"]
+      [0,"Taxonomy \"#{taxonomy_name}\" dag set to #{dag}"]
     rescue => e
       [1,"dag_#{dag} failed: #{e}"]
     end
   end
 
-  def add_tags(taxonomy_name,tag_syntax)
+  def add_tags(taxonomy_name,tag_syntax,details=false)
     begin
-      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-      raise "syntax missing" if tag_syntax.empty?
+      raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      raise "tags missing" if tag_syntax.empty?
       tax = Taxonomy.get_by_name(taxonomy_name)
       tags_before = tax.list_tags
       links_before = tax.count_links
       tax.instantiate(tag_syntax)
       tags_added = (tax.list_tags-tags_before).sort.map{|name| "\"#{name}\""}
-      tags_added.size == 1 ? t_insert = '' : t_insert = 's'
-      tags_added.size > 0 ? t_insert = "#{tags_added.size} tag#{t_insert} #{tags_added.join(', ')}" : t_insert = 'no new tags'
-      puts "Facade.add_tags: links_before=#{links_before}, links_now=#{tax.count_links}"
+      d_insert = ''
+      tags_added.each{|name| d_insert += "Tag \"#{name}\" added"} if details
+      tags_added.size > 0 ? t_insert = "#{tags_added.size} tag" : t_insert = 'no new tag'
+      t_insert += 's' unless tags_added.size == 1
       links_added = tax.count_links-links_before
-      links_added == 1 ? l_insert = '' : l_insert = 's'
-      links_added > 0 ? l_insert = "#{links_added} link#{l_insert} added" : l_insert = 'no new links added'
-      [0,"add_tags \"#{tag_syntax}\" successful, #{t_insert} and #{l_insert}"]
+      links_added > 0 ? l_insert = "#{links_added} link" : l_insert = 'no new link'
+      l_insert += 's' unless links_added == 1
+      [0,"#{d_insert}#{t_insert} and #{l_insert} added to taxonomy \"#{taxonomy_name}\""]
     rescue => e
       [1,"add_tags failed: #{e}"]
+    end
+  end
+
+  def delete_tags(taxonomy_name,tag_syntax,branch=false,details=false)
+    begin
+      raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      raise "tags missing" if tag_syntax.empty?
+      tax = Taxonomy.get_by_name(taxonomy_name)
+      supplied,found,deleted,deleted_list = tax.exstantiate(tag_syntax,branch,true)
+      d_insert = ''
+      deleted_list.each{|tag| d_insert += "Tag \"#{tag}\" deleted\n"} if details
+      found == deleted ? insert = ' and' : insert = ", #{deleted.size}"
+      [0,"#{d_insert}#{found} of #{supplied} supplied tags found#{insert} deleted from taxonomy \"#{taxonomy_name}\""]
+    rescue => e
+      [1,"delete_tags failed: #{e}"]
     end
   end
 
@@ -137,28 +153,9 @@ class Facade
       tag = tax.get_tag_by_name(tag_name)
       tag.rename(new_name)
       raise "name is \"#{tag.name}\"" unless tag.name == new_name
-      [0,"Tag renamed from \"#{tag_name}\" to \"#{new_name}\""]
+      [0,"tag \"#{tag_name}\" renamed to \"#{new_name}\" in taxonomy \"#{taxonomy_name}\""]
     rescue => e
-      [1,"rename_taxonomy \"#{tag_name}\" failed: #{e}"]
-    end
-  end
-
-  def delete_tags(taxonomy_name,tag_list,branch=false,details=false)
-    begin
-      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-      raise "list missing" if tag_list.empty?
-      tax = Taxonomy.lazy(taxonomy_name)
-      list = list.gsub(/\s/,'').split(',')
-      found = list.map{|name| name if tax.has_tag?(name)}
-      initial = tax.list_tags
-      tax.deprecate(found,branch)
-      deleted = initial-tax.list_tags
-      msg = ''
-      deleted.each{|tag| msg += "Tag \"#{tag}\" deleted\n"} if details
-      found.size == deleted.size ? insert = ' and' : insert = ", #{deleted.size}"
-      [0,"#{msg}#{found.size} of #{list.size} supplied tags found#{insert} deleted"]
-    rescue => e
-      [1,"delete_tags failed: #{e}"]
+      [1,"rename_tag \"#{tag_name}\" failed: #{e}"]
     end
   end
 
@@ -211,7 +208,7 @@ class Facade
       else
         msg = "No tags found"
       end
-      [0,msg] + res
+      [0,"#{msg} for taxonomy \"#{taxonomy_name}\""] + res
     rescue => e
       [1,"list_tags failed: #{e}"]
     end
@@ -280,8 +277,38 @@ class Facade
     end
   end
 
-  def add_album(album_name,taxonomy_name,dag='prevent')
-    Album.new(album_name,Taxonomy.lazy(taxonomy_name,dag)) if !Album.exists?(album_name) && Taxonomy.exists?(taxonomy_name)
+  def add_album(album_name,taxonomy_name)
+    begin
+      raise "\"#{album_name}\" name taken by taxonomy \"#{Album.get_by_name(album_name).taxonomy.name}\"" if Album.exists?(album_name)
+      raise "\"#{album_name}\" invalid name - use alphanumeric characters only" unless name_ok?(album_name)
+      raise "\"taxonomy #{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      tax = Taxonomy.get_by_name(taxonomy_name)
+      tax.add_album(album_name)
+      raise "album \"#{album_name}\" remains non-existent" unless Album.exists?(album_name)
+      raise "album \"#{album_name}\" created but not added to taxonomy #{taxonomy_name}" unless tax.has_album?(album_name)
+      [0,"album \"#{album_name}\" added to taxonomy \"#{taxonomy_name}\""]
+    rescue => e
+      [1,"add_album \"#{album_name}\" failed: #{e}"]
+    end
+  end
+
+  def delete_albums(taxonomy_name,album_list,details=false)
+    begin
+      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      raise "list missing" if album_list.empty?
+      tax = Taxonomy.lazy(taxonomy_name)
+      list = album_list.gsub(/\s/,'').split(',')
+      found = tax.list_albums&list
+      initial = tax.list_albums
+      tax.delete_albums(found)
+      deleted = initial-tax.list_albums
+      msg = ''
+      deleted.each{|album| msg += "Album \"#{album}\" deleted\n"} if details
+      found.size == deleted.size ? insert = ' and' : insert = ", #{deleted.size}"
+      [0,"#{msg}#{found.size} of #{list.size} supplied albums found#{insert} deleted using taxonomy \"#{taxonomy_name}\""]
+    rescue => e
+      [1,"delete_albums failed: #{e}"]
+    end
   end
 
   def rename_album(album_name,new_name)
@@ -291,25 +318,75 @@ class Facade
       album = Album.get_by_name(album_name)
       album.rename(new_name)
       raise "name is \"#{album.name}\"" unless album.name == new_name
-      [0,"Album renamed from \"#{album_name}\" to \"#{new_name}\""]
+      [0,"album \"#{album_name}\" renamed to \"#{new_name}\""]
     rescue => e
       [1,"rename_album \"#{album_name}\" failed: #{e}"]
     end
   end
 
-  def list_all_albums
-    Album.list
+  def list_albums(taxonomy_name,reverse=false,details=false)
+    begin
+      if taxonomy_name.nil?
+        res = Album.list
+        raise "No albums exist" if res.empty?
+        t_insert = ' %s (taxonomy)'
+        in_taxonomy = ''
+      else
+        raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+        res = Taxonomy.get_by_name(taxonomy_name).list_albums
+        t_insert = ''
+        in_taxonomy = " in taxonomy \"#{taxonomy_name}\""
+      end
+      item_details = ''
+      if res.empty?
+        album_total = 'No albums'
+      else
+        album_total = "#{res.size} album"
+        album_total += 's' unless res.size == 1
+        res.sort!
+        res.reverse! if reverse
+        if details
+          longest = res.max_by(&:length).size
+          item_total = 0
+          taxonomies = []
+          res.each_with_index do |name,i|
+            alm = Album.get_by_name(name)
+            item_count = alm.count_items
+            item_total += item_count
+            taxonomy_name.nil? ? t_name = alm.taxonomy.name : t_name = ''
+            taxonomies |= [t_name]
+            if i%10 > 0
+              res[i] = "%-#{longest}s %4s      #{t_insert[0..2]}" % [name,item_count,t_name]
+            else
+              res[i] = "%-#{longest}s %4s items#{t_insert}" % [name,item_count,t_name]
+            end
+          end
+          item_details = " containing #{item_total} item"
+          item_details += 's' unless item_total == 1
+          if taxonomy_name.nil?
+            in_taxonomy = " in #{taxonomies.size} taxonom"
+            taxonomies.size == 1 ? in_taxonomy += 'y' : in_taxonomy += 'ies'
+          end
+        end
+      end
+      [0,"#{album_total} found#{in_taxonomy}#{item_details}"] + res
+    rescue => e
+      [1,"list_albums failed: #{e}"]
+    end
   end
 
-  def count_all_albums
-    Album.count
-  end
-
-  def list_albums(taxonomy_name=nil)
-    taxonomy.nil? ? Album.list_albums : Taxonomy.lazy(taxonomy_name).list_albums if Taxonomy.exists?(taxonomy_name)
-  end
   def count_albums(taxonomy_name=nil)
-    taxonomy.nil? ? Album.count_albums : Taxonomy.lazy(taxonomy_name).count_albums if Taxonomy.exists?(taxonomy_name)
+    begin
+      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      taxonomy_name.nil? ? res = Album.count : res = Taxonomy.get_by_name(taxonomy_name).count_albums
+      [0,'',res]
+    rescue => e
+      [1,"count_tags failed: #{e}"]
+    end
+  end
+
+  def count_all_albums(taxonomy_name=nil)
+    taxonomy.nil? ? Album.count : Taxonomy.lazy(taxonomy_name).count_albums if Taxonomy.exists?(taxonomy_name)
   end
 
   def rename_item(album_name,item_name,new_name)
@@ -321,11 +398,13 @@ class Facade
       item = album.get_item_by_name(item_name)
       item.rename(new_name)
       raise "name is \"#{item.name}\"" unless item.name == new_name
-      [0,"Item renamed from \"#{item_name}\" to \"#{new_name}\""]
+      [0,"item \"#{item_name}\" renamed to \"#{new_name}\""]
     rescue => e
       [1,"rename_item \"#{item_name}\" failed: #{e}"]
     end
   end
+
+
 
 
 end

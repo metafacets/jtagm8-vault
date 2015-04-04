@@ -6,10 +6,15 @@ module Tagm8Db
     @db = db
     MongoMapper.connection = Mongo::Connection.new('localhost')
     MongoMapper.database = db
-    PTag.ensure_index(:name)
-    PTag.ensure_index(:is_root)
-    PTag.ensure_index(:is_folk)
-    PTag.ensure_index(:taxonomy)
+    PTaxonomy.ensure_index :name, :unique => true
+    PTag.ensure_index :name
+    PTag.ensure_index :is_root
+    PTag.ensure_index :is_folk
+    PTag.ensure_index :taxonomy
+    PTag.ensure_index :items
+    PItem.ensure_index :name
+    PItem.ensure_index :tags
+    PItem.ensure_index :album
   end
   def wipe
     MongoMapper.connection.drop_database(@db)
@@ -141,6 +146,10 @@ class PTaxonomy
     albums.map {|alm| alm.name}
   end
 
+  def get_album_by_name(name)
+    albums.select {|alm| alm.name == name}.first
+  end
+
 end
 
 class PTag
@@ -244,8 +253,9 @@ class PAlbum
     PAlbum.where(name:name.to_s).count
   end
 
+  # to be used by Facade.list_albums --details
   def self.get_by_name(name)
-    PAlbum.first(name:name)
+    PAlbum.where(name:name.to_s)
   end
 
   def self.list
@@ -253,7 +263,7 @@ class PAlbum
   end
 
   def get_item_by_name(name)
-    PItem.first(album:self._id.to_s,name:name)
+    items.select {|item| item.name == name}.first
   end
 
   def count_items(name=nil)
@@ -284,6 +294,11 @@ class PItem
 
   def self.count_by_name(name)
     PItem.where(name:name.to_s).count
+  end
+
+  # to be used by Facade.list_items - details
+  def self.get_by_name(name)
+    PItem.where(name:name.to_s)
   end
 
 #  # only needed if Item.open(name) is supported

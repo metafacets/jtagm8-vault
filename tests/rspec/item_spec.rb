@@ -11,14 +11,12 @@ describe Item do
     alm1 = tax1.add_album('alm1')
     alm2 = tax1.add_album('alm2')
     tax2.add_album('alm3')
-    alm1_exists = Album.exists?(name='alm1')
-    alm4_exists = Album.exists?(name='alm4')
-    tax1_has_alm1 = tax1.has_album?(name='alm1')
-    tax1_has_alm3 = tax1.has_album?(name='alm3')
-    oalm1 = Album.open('alm1')
-    oalm4 = Album.open('alm4')
-#    lalm1 = Album.lazy('alm1')
-#    lalm4 = Album.lazy('alm4')
+    alm1_exists = Album.exists?('alm1')
+    alm4_exists = Album.exists?('alm4')
+    tax1_has_alm1 = tax1.has_album?('alm1')
+    tax1_has_alm3 = tax1.has_album?('alm3')
+    oalm1 = tax1.get_album_by_name('alm1')
+    oalm4 = tax1.get_album_by_name('alm4')
     count_alm = Album.count
     tax1_count_alm = tax1.count_albums
     list_alm = Album.list.sort

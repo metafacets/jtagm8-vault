@@ -13,8 +13,8 @@ describe 'Taxonomy' do
     Taxonomy.new(name='tax3')
     hastax1 = Taxonomy.exists?(name='tax1')
     hastax4 = Taxonomy.exists?(name='tax4')
-    otax1 = Taxonomy.open('tax1')
-    otax4 = Taxonomy.open('tax4')
+    otax1 = Taxonomy.get_by_name('tax1')
+    otax4 = Taxonomy.get_by_name('tax4')
     ltax1 = Taxonomy.lazy('tax1')
     ltax4 = Taxonomy.lazy('tax4')
     count = Taxonomy.count

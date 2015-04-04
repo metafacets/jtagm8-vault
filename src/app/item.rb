@@ -11,9 +11,6 @@ class Album < PAlbum
     name.nil? ? self.count > 0 : self.count_by_name(name) > 0
   end
 
-  # open existing album by name
-  def self.open(name) self.get_by_name(name) end
-
   # create new or open existing album by name
   # postpone - needs to pass a loaded taxonomy for new album
   #def self.lazy(name)
@@ -29,11 +26,7 @@ class Album < PAlbum
 
   def rename(name)
     self.name = name
-    self.save
-  end
-
-  def self.delete_list(list)
-    list.each{|name| self.get_by_name(name).delete}
+    save
   end
 
   def add_item(entry=nil)
@@ -51,6 +44,7 @@ class Album < PAlbum
       item.tags.each{|tag| tag.subtract_items([self])}
       item.delete
     end
+    save
   end
 
   def has_item?(name=nil) count_items(name) > 0 end
@@ -66,9 +60,6 @@ class Item < PItem
   def self.exists?(name=nil)
     name.nil? ? self.count > 0 : self.count_by_name(name) > 0
   end
-
-#  # open existing item by name
-#  def self.open(name) self.get_by_name(name) end
 
   def initialize(album)
     super(date:Time.now,album:album)

@@ -14,12 +14,9 @@ class Taxonomy < PTaxonomy
     name.nil? ? self.count > 0 : self.count_by_name(name) > 0
   end
 
-  # open existing taxonomy by name
-  def self.open(name) self.get_by_name(name) end
-
   # create new or open existing taxonomy by name
   def self.lazy(name,dag='prevent')
-    tax = self.open(name)
+    tax = self.get_by_name(name)
     tax = self.new(name,dag) if tax.nil?
     tax
   end
@@ -210,7 +207,7 @@ class Taxonomy < PTaxonomy
   def delete_albums(album_list)
     found = list_albums&album_list
     found.each do |album_name|
-      album = Album.get_by_name(album_name)
+      album = get_album_by_name(album_name)
       album.delete_items(album.list_items)
       album.delete
     end

@@ -250,7 +250,7 @@ class PAlbum
   many :items, :class_name => 'PItem'
 
   def self.count_by_name(name=nil)
-    PAlbum.where(name:name.to_s).count
+    name.nil? ? PAlbum.count : PAlbum.where(name:name.to_s).count
   end
 
   # to be used by Facade.list_albums --details

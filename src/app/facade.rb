@@ -277,8 +277,10 @@ class Facade
     end
   end
 
-  def add_album(album_name,taxonomy_name)
+  def add_album(taxonomy_name,album_name)
     begin
+      raise "\"taxonomy not specified" if taxonomy_name.empty? || taxonomy_name.nil?
+      raise "\"album not specified" if album_name.empty? || album_name.nil?
       raise "\"taxonomy #{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       tax = Taxonomy.get_by_name(taxonomy_name)
       raise "\"#{album_name}\" name taken by taxonomy \"#{taxonomy_name}\"" if tax.has_album?(album_name)
@@ -311,22 +313,30 @@ class Facade
     end
   end
 
-  def rename_album(taxonomy_name,album_name,new_name)
+  def rename_album(taxonomy_name=nil,album_name,new_name)
     begin
-      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-      tax = Taxonomy.get_by_name(taxonomy_name)
-      raise "album \"#{album_name}\" not found" unless Album.exists?(album_name)
       raise "\"#{new_name}\" invalid name - use alphanumeric characters only" unless name_ok?(new_name)
-      album = tax.get_album_by_name(album_name)
-      album.rename(new_name)
-      raise "name is \"#{album.name}\"" unless album.name == new_name
-      [0,"album \"#{album_name}\" renamed to \"#{new_name}\""]
+      if taxonomy_name.nil?
+        raise "album \"#{album_name}\" not found" unless Album.exists?(album_name)
+        albums = Album.get_by_name(album_name)
+      else
+        raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+        tax = Taxonomy.get_by_name(taxonomy_name)
+        raise "album \"#{album_name}\" not found in taxonomy \"#{taxonomy_name}\"" unless tax.has_album?(album_name)
+        albums = [tax.get_album_by_name(album_name)]
+      end
+      supplied = albums.size
+      renamed = Album.count_by_name(new_name)
+      albums.each{|album| album.rename(new_name)}
+      renamed = Album.count_by_name(new_name) - renamed
+      raise "no albums renamed to \"#{new_name}\"" if renamed == 0
+      [0,"#{renamed} of #{supplied} albums renamed from \"#{album_name}\" to \"#{new_name}\""]
     rescue => e
       [1,"rename_album \"#{album_name}\" failed: #{e}"]
     end
   end
 
-  def list_albums(taxonomy_name=nil,reverse=false,details=false)
+  def list_albums(taxonomy_name=nil,album_name=nil,reverse=false,details=false)
     begin
       if taxonomy_name.nil?
         res = Album.list
@@ -335,9 +345,16 @@ class Facade
         in_taxonomy = ''
       else
         raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-        res = Taxonomy.get_by_name(taxonomy_name).list_albums
+        tax = Taxonomy.get_by_name(taxonomy_name)
+        res = tax.list_albums
         t_insert = ''
         in_taxonomy = " in taxonomy \"#{taxonomy_name}\""
+      end
+      if album_name.nil?
+        with_name = ''
+      else
+        res = res.select{|r| r == album_name}
+        with_name = " with name \"#{album_name}\""
       end
       item_details = ''
       if res.empty?
@@ -353,7 +370,7 @@ class Facade
           taxonomies = []
           i = 0
           res.each do |name|
-            albums = Album.get_by_name(name)
+            taxonomy_name.nil? ? albums = Album.get_by_name(name) : albums = [tax.get_album_by_name(name)]
             albums = albums.sort_by{|album| album.taxonomy.name}
             albums.reverse! if reverse
             albums.each do |album|
@@ -377,16 +394,16 @@ class Facade
           end
         end
       end
-      [0,"#{album_total} found#{in_taxonomy}#{item_details}"] + res
+      [0,"#{album_total}#{with_name} found#{in_taxonomy}#{item_details}"] + res
     rescue => e
       [1,"list_albums failed: #{e}"]
     end
   end
 
-  def count_albums(taxonomy_name=nil)
+  def count_albums(taxonomy_name=nil,album_name=nil)
     begin
       raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-      taxonomy_name.nil? ? res = Album.count : res = Taxonomy.get_by_name(taxonomy_name).count_albums
+      taxonomy_name.nil? ? res = Album.count_by_name(album_name) : res = Taxonomy.get_by_name(taxonomy_name).count_albums(album_name)
       [0,'',res]
     rescue => e
       [1,"count_tags failed: #{e}"]

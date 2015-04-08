@@ -7,6 +7,15 @@ class Facade
 
   def name_ok?(name) name =~ /[A-Za-z0-9_]+/ end
 
+  def grammar(msg)
+    # convert nouns from plural to singular form excluding 'n of m' groups
+    msg.gsub!(/((?<!\sof\s)1\s)([a-zA-Z][a-z]+)(ies)(\b)/,'\1\2y\4')
+    msg.gsub!(/((?<!\sof\s)1\s)([a-zA-Z][a-z]+)(s)(\b)/,'\1\2\4')
+    # convert 0 to no excluding 'n of m' groups
+    msg.gsub!(/((?<!\sof\s)0\s(?!of\s))([a-zA-Z][a-z]+\b)/,'no \2')
+    msg
+  end
+
   def add_taxonomy(taxonomy_name,dag='prevent')
     begin
       raise "name taken" if Taxonomy.exists?(taxonomy_name)
@@ -70,7 +79,7 @@ class Facade
           end
         end
       end
-      [0,"#{c} taxonomies found"] + res
+      [0,grammar("#{c} taxonomies found")] + res
     rescue => e
       [1,"list_taxonomies failed: #{e}"]
     end
@@ -118,12 +127,9 @@ class Facade
       tags_added = (tax.list_tags-tags_before).sort.map{|name| "\"#{name}\""}
       d_insert = ''
       tags_added.each{|name| d_insert += "Tag \"#{name}\" added"} if details
-      tags_added.size > 0 ? t_insert = "#{tags_added.size} tag" : t_insert = 'no new tag'
-      t_insert += 's' unless tags_added.size == 1
       links_added = tax.count_links-links_before
-      links_added > 0 ? l_insert = "#{links_added} link" : l_insert = 'no new link'
-      l_insert += 's' unless links_added == 1
-      [0,"#{d_insert}#{t_insert} and #{l_insert} added to taxonomy \"#{taxonomy_name}\""]
+      msg = grammar("#{tags_added.size} tags and #{links_added} links added to taxonomy \"#{taxonomy_name}\"")
+      [0,"#{d_insert}#{msg}"]
     rescue => e
       [1,"add_tags failed: #{e}"]
     end
@@ -178,37 +184,31 @@ class Facade
         folks_count = tax.count_folksonomies
         if hierarchy
           if roots_count > 0
-            roots_count > 1 ? h_insert = 'ies' : h_insert = 'y'
-            tags_count-folks_count > 1 ? t_insert = 's' : t_insert = ''
             roots = tax.roots.map{|tag| tag.name}.sort!
             roots.reverse! if reverse
             roots.each{|root_name| res += show_nested.call(tax,root_name,reverse)}
-            links_count = tax.count_links
-            links_count > 1 ? l_insert = 's' : l_insert = ''
-            msg = "#{roots_count} hierarch#{h_insert} found containing #{tags_count-folks_count} tag#{t_insert} and #{links_count} link#{l_insert}\n"
+            msg = "#{roots_count} hierarchies found containing #{tags_count-folks_count} tags and #{tax.count_links} links\n"
           else
             msg = "No tag hierarchies found\n"
           end
           if folks_count > 0
-            folks_count > 1 ? t_insert = 's' : t_insert = ''
             folks = tax.folksonomies.map{|tag| tag.name}.sort!
             folks.reverse! if reverse
             res += folks
-            msg += "#{folks_count} folksonomy tag#{t_insert} found\n"
+            msg += "#{folks_count} folksonomies found\n"
           else
-            msg += "No folksonomy tags found\n"
+            msg += "No folksonomies found\n"
           end
         else
           res = tax.list_tags.sort!
           res.reverse! if reverse
           msg = ''
         end
-        tags_count > 1 ? t_insert = 's' : t_insert = ''
-        msg += "#{tags_count} tag#{t_insert} found in total"
+        msg += "#{tags_count} tags found in total"
       else
         msg = "No tags found"
       end
-      [0,"#{msg} for taxonomy \"#{taxonomy_name}\""] + res
+      [0,"#{grammar(msg)} for taxonomy \"#{taxonomy_name}\""] + res
     rescue => e
       [1,"list_tags failed: #{e}"]
     end
@@ -256,7 +256,7 @@ class Facade
       raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       tax = Taxonomy.lazy(taxonomy_name)
       list = list.gsub(/\s/,'').split(',')
-      list.size > 1 ? common = 'common ' : common = ''
+      list.size > 1 ? in_common = 'in common ' : in_common = ''
       bad = list.select{|name| name unless tax.has_tag?(name)}
       unless bad.empty?
         bad.size > 1 ? insert = 's' : insert = ''
@@ -269,9 +269,7 @@ class Facade
       # get [common_relative_names]
       res = relatives.map{|relative| relative.name}.sort!
       res.reverse! if reverse
-      res.size > 1 ? insert = 's' : insert = ''
-      res.empty? ? msg = "No #{common}#{genealogy} found" : msg = "#{res.size} #{common}#{genealogy[0...-1]}#{insert} found"
-      [0,msg] + res
+      [0,grammar("#{res.size} #{genealogy} #{in_common}found")] + res
     rescue => e
       [1,"list_#{genealogy} failed: #{e}"]
     end
@@ -294,7 +292,7 @@ class Facade
     end
   end
 
-  def delete_albums(taxonomy_name,album_list,details=false)
+  def delete_albums(taxonomy_name=nil,album_list=[],details=false)
     begin
       raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       raise "list missing" if album_list.empty?
@@ -357,11 +355,8 @@ class Facade
         with_name = " with name \"#{album_name}\""
       end
       item_details = ''
-      if res.empty?
-        album_total = 'No albums'
-      else
-        album_total = "#{res.size} album"
-        album_total += 's' unless res.size == 1
+      album_total = "#{res.size} albums"
+      unless res.empty?
         res.sort!
         res.reverse! if reverse
         if details
@@ -386,15 +381,11 @@ class Facade
               i += 1
             end
           end
-          item_details = " containing #{item_total} item"
-          item_details += 's' unless item_total == 1
-          if taxonomy_name.nil?
-            in_taxonomy = " in #{taxonomies.size} taxonom"
-            taxonomies.size == 1 ? in_taxonomy += 'y' : in_taxonomy += 'ies'
-          end
+          item_details = " containing #{item_total} items"
+          in_taxonomy = " in #{taxonomies.size} taxonomies" if taxonomy_name.nil?
         end
       end
-      [0,"#{album_total}#{with_name} found#{in_taxonomy}#{item_details}"] + res
+      [0,grammar("#{album_total}#{with_name} found#{in_taxonomy}#{item_details}")] + res
     rescue => e
       [1,"list_albums failed: #{e}"]
     end
@@ -429,3 +420,7 @@ class Facade
 
 
 end
+
+#f = Facade.instance
+#puts "#{f.grammar('0 of 1 taxonomies found with 5 links and 3 tags in 1 albums and 1 taxonomies and 5 taxonomies and 0 items')}"
+#puts "#{f.grammar('0 albums and 1 taxonomies in 0 of 1 taxonomies and 0 items')}"

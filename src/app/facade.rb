@@ -9,8 +9,10 @@ class Facade
 
   def grammar(msg)
     # convert nouns from plural to singular form excluding 'n of m' groups
-    msg.gsub!(/((?<!\sof\s)1\s)([a-zA-Z][a-z]+)(ies)(\b)/,'\1\2y\4')
-    msg.gsub!(/((?<!\sof\s)1\s)([a-zA-Z][a-z]+)(s)(\b)/,'\1\2\4')
+    # hyphonate adjectives to nouns eg. 5 folksonomy_tags
+    msg.gsub!(/((?<!\sof\s)1\s)([a-zA-Z][a-z_]+)(ies)(\b)/,'\1\2y\4')
+    msg.gsub!(/((?<!\sof\s)1\s)([a-zA-Z][a-z_]+)(s)(\b)/,'\1\2\4')
+    msg.gsub!(/_/,' ')
     # convert 0 to no excluding 'n of m' groups
     msg.gsub!(/((?<!\sof\s)0\s(?!of\s))([a-zA-Z][a-z]+\b)/,'no \2')
     msg
@@ -143,7 +145,7 @@ class Facade
       supplied,found,deleted,deleted_list = tax.exstantiate(tag_syntax,branch,true)
       d_insert = ''
       deleted_list.each{|tag| d_insert += "Tag \"#{tag}\" deleted\n"} if details
-      found == deleted ? insert = ' and' : insert = ", #{deleted.size}"
+      found == deleted ? insert = ' and' : insert = ", #{deleted}"
       [0,"#{d_insert}#{found} of #{supplied} supplied tags found#{insert} deleted from taxonomy \"#{taxonomy_name}\""]
     rescue => e
       [1,"delete_tags failed: #{e}"]
@@ -195,9 +197,9 @@ class Facade
             folks = tax.folksonomies.map{|tag| tag.name}.sort!
             folks.reverse! if reverse
             res += folks
-            msg += "#{folks_count} folksonomies found\n"
+            msg += "#{folks_count} folksonomy_tags found\n"
           else
-            msg += "No folksonomies found\n"
+            msg += "No folksonomy_tags found\n"
           end
         else
           res = tax.list_tags.sort!
@@ -256,7 +258,7 @@ class Facade
       raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       tax = Taxonomy.lazy(taxonomy_name)
       list = list.gsub(/\s/,'').split(',')
-      list.size > 1 ? in_common = 'in common ' : in_common = ''
+      list.size > 1 ? common = 'common_' : common = ''
       bad = list.select{|name| name unless tax.has_tag?(name)}
       unless bad.empty?
         bad.size > 1 ? insert = 's' : insert = ''
@@ -269,7 +271,7 @@ class Facade
       # get [common_relative_names]
       res = relatives.map{|relative| relative.name}.sort!
       res.reverse! if reverse
-      [0,grammar("#{res.size} #{genealogy} #{in_common}found")] + res
+      [0,grammar("#{res.size} #{common}#{genealogy} found")] + res
     rescue => e
       [1,"list_#{genealogy} failed: #{e}"]
     end
@@ -285,7 +287,7 @@ class Facade
       raise "\"#{album_name}\" invalid name - use alphanumeric characters only" unless name_ok?(album_name)
       tax.add_album(album_name)
       raise "album \"#{album_name}\" remains non-existent" unless Album.exists?(album_name)
-      raise "album \"#{album_name}\" created but not added to taxonomy #{taxonomy_name}" unless tax.has_album?(album_name)
+#      raise "album \"#{album_name}\" created but not added to taxonomy #{taxonomy_name}" unless tax.has_album?(album_name)
       [0,"album \"#{album_name}\" added to taxonomy \"#{taxonomy_name}\""]
     rescue => e
       [1,"add_album \"#{album_name}\" failed: #{e}"]
@@ -294,18 +296,38 @@ class Facade
 
   def delete_albums(taxonomy_name=nil,album_list=[],details=false)
     begin
-      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       raise "list missing" if album_list.empty?
-      tax = Taxonomy.lazy(taxonomy_name)
       list = album_list.gsub(/\s/,'').split(',')
-      found = tax.list_albums&list
-      initial = tax.list_albums
-      tax.delete_albums(found)
-      deleted = initial-tax.list_albums
-      msg = ''
-      deleted.each{|album| msg += "Album \"#{album}\" deleted\n"} if details
-      found.size == deleted.size ? insert = ' and' : insert = ", #{deleted.size}"
-      [0,"#{msg}#{found.size} of #{list.size} supplied albums found#{insert} deleted using taxonomy \"#{taxonomy_name}\""]
+      if taxonomy_name.nil?
+        found = Album.list&list
+      else
+        raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+        tax = Taxonomy.get_by_name(taxonomy_name)
+        found = tax.list_albums&list
+      end
+      raise "no supplied albums found" if found.empty?
+      initial = Album.count
+      details_msg = ''
+      unless taxonomy_name.nil?
+        tax.delete_albums(found)
+        tax_names = found.map{|name| "\"#{name}\""}.join(', ')
+        found.size == 1 ? d_insert = '' : d_insert = 's'
+        details_msg += "deleting album#{d_insert} #{tax_names} from taxonomy \"#{taxonomy_name}\"\n" if details
+      else
+        found.each do |name|
+          taxonomies = Album.get_by_name(name).map{|album| album.taxonomy}
+          taxonomies.each{|tax| tax.delete_albums([name])}
+          if details
+            details_msg += "deleting album \"#{name}\"";
+            tax_names = taxonomies.map{|tax| "\"#{tax.name}\""}.join(', ')
+            taxonomies.size == 1 ? details_msg += " from taxonomy #{tax_names}\n" : details_msg += " from taxonomies #{tax_names}\n"
+          end
+        end
+      end
+      deleted = initial-Album.count
+      found.size == deleted ? d_insert = ' and' : d_insert = ", #{deleted}"
+      msg = grammar("#{found.size} of #{list.size} supplied album_names found#{d_insert} deleted")
+      [0,"#{details_msg}#{msg}"]
     rescue => e
       [1,"delete_albums failed: #{e}"]
     end

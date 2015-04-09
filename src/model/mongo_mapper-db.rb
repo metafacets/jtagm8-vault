@@ -31,7 +31,7 @@ class PTaxonomy
   many :albums, :class_name => 'PAlbum'
 
   def self.count_by_name(name)
-    PTaxonomy.where(name:name.to_s).count
+    PTaxonomy.where(name:name.to_s).size
   end
 
   def self.get_by_name(name)
@@ -68,9 +68,9 @@ class PTaxonomy
 
   def count_tags(name=nil)
     if name.nil?
-      PTag.where(taxonomy:self._id.to_s).count
+      PTag.where(taxonomy:self._id.to_s).size
     else
-      PTag.where(taxonomy:self._id.to_s,name:name.to_s).count
+      PTag.where(taxonomy:self._id.to_s,name:name.to_s).size
     end
   end
 
@@ -83,7 +83,7 @@ class PTaxonomy
   end
 
   def count_roots
-    PTag.where(taxonomy:self._id.to_s,is_root:true).count
+    PTag.where(taxonomy:self._id.to_s,is_root:true).size
   end
 
   def has_root?(tag=nil)
@@ -112,7 +112,7 @@ class PTaxonomy
   def folksonomy; folksonomies end
 
   def count_folksonomies
-    PTag.where(taxonomy:self._id.to_s,is_folk:true).count
+    PTag.where(taxonomy:self._id.to_s,is_folk:true).size
   end
 
   def has_folksonomy?(tag=nil)
@@ -138,7 +138,7 @@ class PTaxonomy
     if name.nil?
       albums.count
     else
-      albums.select {|alm| alm.name == name}.count
+      albums.select {|alm| alm.name == name}.size
     end
   end
 
@@ -165,6 +165,15 @@ class PTag
   key :taxonomy, String
   key :item_ids, Array
   many :items, :class_name => 'PItem', :in => :item_ids
+
+  def self.count_by_name(name)
+    PTag.where(name:name.to_s).size
+  end
+
+  # to be used by Facade.list|rename|delete_tags
+  def self.get_by_name(name)
+    PTag.where(name:name.to_s)
+  end
 
   def get_taxonomy
     PTaxonomy.first(_id:taxonomy)
@@ -250,10 +259,10 @@ class PAlbum
   many :items, :class_name => 'PItem'
 
   def self.count_by_name(name=nil)
-    name.nil? ? PAlbum.count : PAlbum.where(name:name.to_s).count
+    name.nil? ? PAlbum.count : PAlbum.where(name:name.to_s).size
   end
 
-  # to be used by Facade.list_albums --details
+  # to be used by Facade.list|rename|delete_albums
   def self.get_by_name(name)
     PAlbum.where(name:name.to_s)
   end
@@ -270,7 +279,7 @@ class PAlbum
     if name.nil?
       items.count
     else
-      items.select {|item| item.name == name}.count
+      items.select {|item| item.name == name}.size
     end
   end
 
@@ -293,10 +302,10 @@ class PItem
   belongs_to :album, :class_name => 'PAlbum'
 
   def self.count_by_name(name)
-    PItem.where(name:name.to_s).count
+    PItem.where(name:name.to_s).size
   end
 
-  # to be used by Facade.list_items - details
+  # to be used by Facade.list|rename|delete_items
   def self.get_by_name(name)
     PItem.where(name:name.to_s)
   end

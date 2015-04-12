@@ -140,24 +140,24 @@ class Item < PItem
   def get_content
     result = original_content.dup
     puts "Item.get_content 1: original_content=#{original_content}, original_tag_ids=#{self.original_tag_ids}"
-    puts "Item.get_content 2: tags.size=#{tags.size}, get_taxonomy.name=#{get_taxonomy.name}, get_taxonomy.count_tags=#{get_taxonomy.count_tags}"
-#    if get_taxonomy.has_tag? && !self.substitutions.nil?
+    puts "Item.get_content 2: tags.size=#{tags.size}, get_taxonomy.name=#{get_taxonomy.name}, get_taxonomy.count_tags=#{get_taxonomy.count_tags}, get_taxonomy.has_tag?=#{get_taxonomy.has_tag?}"
     if !self.original_tag_ids.nil?
       # transform substitutions into array of paired old lowercase and new uppercase tag names including unchanged
       old_id = original_tag_ids.split(',').each_slice(2).to_a
+#      old_new = old_id.map{|name,id| Tag.get_by_id(id).nil? ? [name,"#{name}deleted".upcase] : [name,Tag.get_by_id(id).name.upcase]}
       old_new = old_id.map{|name,id| Tag.get_by_id(id).nil? ? [name,name.upcase] : [name,Tag.get_by_id(id).name.upcase]}
       puts "Item.get_content 3: old_new=#{old_new}"
       # replace old with new tag names, old_new start with longest first with case transformation preventing nested substitutions
       tail = original_content.dup
-      while tail =~ /([+|\-|=]?)#([^\s]+)(.*)/
-        ddl,tail = $2,$3
+      while tail =~ /#([^\s]+)((.|\n)*)/
+        ddl,tail = $1,$2
         ddl_sub = ddl.dup
         old_new.each{|old,new| ddl_sub.gsub!(old,new)}
-        result.gsub!(/#{ddl}#{tail}$/,"#{ddl_sub.downcase}#{tail}")
-        puts "Item.get_content 4: ddl=#{ddl}, post=#{tail}, ddl_sub=#{ddl_sub}"
+        puts "Item.get_content 4: ddl=#{ddl}, tail=#{tail}, ddl_sub=#{ddl_sub}"
+        result.gsub!("##{ddl}#{tail}","##{ddl_sub.downcase}#{tail}")
+        puts "Item.get_content 5: result=#{result}"
       end
     end
-    puts "Item.get_content 5: result=#{result}"
     result
   end
 

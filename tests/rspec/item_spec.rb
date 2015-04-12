@@ -119,6 +119,7 @@ describe Item do
             ,["Name\n#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a","Name","#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a",[:a,:b,:d,:e,:f],[:a,:b,:c,:d,:e,:f]]\
             ,["Name\n#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a -#f,b,c","Name","#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a -#f,b,c",[:a,:d,:e],[:a,:d,:e]]\
             ]
+#            ,["Name\n#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a -#f,b,c","Name","#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a -#fdeleted,bdeleted,cdeleted",[:a,:d,:e],[:a,:d,:e]]\
     tests.each do |test|
       describe test[0] do
         describe :parse_entry do
@@ -191,16 +192,35 @@ describe Item do
           queried_tags = item.query_tags.map {|tag| tag.name.to_sym}.sort
           it "query_tags = #{test[3]}" do expect(queried_tags).to eq(test[3]) end
         end
-        describe :get_taxonomy do
+        describe ':get_content and tag renaming' do
           Tagm8Db.wipe
           tax = Taxonomy.new('tax1')
           alm = tax.add_album('alm')
           item = alm.add_item(test[0])
-          item_tag = item.tags[0]
-          item_tag.nil? ? tag_tag = nil : Tag.get_by_id(item_tag._id)
-          it "item.get_taxonomy ok" do expect(item.get_taxonomy._id).to eq(tax._id) end
-          it "item.get_taxonomy.count_tags ok" do expect(item.get_taxonomy.count_tags).to eq(tax.count_tags) end
-          it "item_tag found via Tag" do expect(item_tag.nil?).to eq(tag_tag.nil?) end
+          item_tag = item.tags.select{|tag| tag.name == 'a'}.first
+          unless item_tag.nil?
+#            puts "get_content and tag renaming: item.original_tag_ids.include?(item_tag._id)=#{item.original_tag_ids.include?(item_tag._id)}, item_tag._id=#{item_tag._id}, item.original_tag_ids=#{item.original_tag_ids}"
+            tax_id = tax._id
+            item_tax_id = item.get_taxonomy._id
+            item_tax_count_tags = item.get_taxonomy.count_tags
+            tax_count_tags = tax.count_tags
+#            tag_tag = Tag.get_by_id(item_tag._id)
+            original_tags_include_item_tag = item.original_tag_ids.include?(item_tag._id)
+            tag = tax.get_tag_by_name('a')
+            tag.rename('renamed')
+            new_content = test[2].gsub('a','renamed')
+            tag_name = tag.name
+#            tag_tag_name = tag_tag.name
+#            item_tag_name = item_tag.name
+            item_get_content = item.get_content
+            it 'item.get_taxonomy ok' do expect(item_tax_id).to eq(tax_id) end
+            it 'item.get_taxonomy.count_tags ok' do expect(item_tax_count_tags).to eq(tax_count_tags) end
+            it 'item.original_tag_ids.include?(item_tag._id)' do expect(original_tags_include_item_tag).to be_truthy end
+            it 'tag is renamed' do expect(tag_name).to eq('renamed') end
+#            it 'tag_tag is renamed' do expect(tag_tag_name).to eq('renamed') end
+#            it 'item_tag is renamed' do expect(item_tag_name).to eq('renamed') end
+            it 'item content uses renamed tag' do expect(item_get_content).to eq(new_content) end
+          end
         end
       end
     end

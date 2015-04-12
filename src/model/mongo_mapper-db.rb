@@ -58,6 +58,10 @@ class PTaxonomy
     PTag.first(taxonomy:self._id.to_s,name:name)
   end
 
+  def get_tag_by_id(id)
+    PTag.first(taxonomy:self._id.to_s,_id:id)
+  end
+
   def tags
     PTag.where(taxonomy:self._id.to_s).all
   end

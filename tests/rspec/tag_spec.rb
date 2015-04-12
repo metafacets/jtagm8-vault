@@ -1311,6 +1311,11 @@ describe 'Taxonomy, Tag, Album, Item composites round-tripping checks' do
     tax_list_tags = tax.list_tags.sort
     tax_count_tags_all = tax.count_tags
     i1_tax_count_tags_all = i1.get_taxonomy.count_tags
+    i1_tax_has_tags = i1.get_taxonomy.has_tag?
+    taxs_exist = Taxonomy.exist?
+    alms_exist = Album.exist?
+    itms_exist = Item.exist?
+    tags_exist = Tag.exist?
     tax_count_tag_exists = tax.count_tags('c2')
     tax_count_tag_nonexistent = tax.count_tags('c5')
     tag_count_by_name_exists = Tag.count_by_name('c2')
@@ -1336,6 +1341,11 @@ describe 'Taxonomy, Tag, Album, Item composites round-tripping checks' do
     it "tax.List_tags" do expect(tax_list_tags).to eq(['c2','c4']) end
     it "tax.count_tags" do expect(tax_count_tags_all).to eq(2) end
     it "item.get_taxonomy.count_tags" do expect(i1_tax_count_tags_all).to eq(2) end
+    it "item.get_taxonomy.has_tag?" do expect(i1_tax_has_tags).to be true end
+    it "Taxonomy.exist?" do expect(taxs_exist).to be true end
+    it "Album.exist?" do expect(alms_exist).to be true end
+    it "Item.exist?" do expect(itms_exist).to be true end
+    it "Tag.exist?" do expect(tags_exist).to be true end
     it "tax.count_tags(exists)" do expect(tax_count_tag_exists).to eq(1) end
     it "tax.count_tags(non-existent)" do expect(tax_count_tag_nonexistent).to eq(0) end
     it ":count_by_name exists" do expect(tag_count_by_name_exists).to eq(1) end

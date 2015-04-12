@@ -103,7 +103,7 @@ class Taxonomy < PTaxonomy
       end
       update_status(tags)
     end
-    leaves
+    [leaves,tags]
   end
 
   def exstantiate(tag_ddl,branch=false,report=false)
@@ -114,7 +114,7 @@ class Taxonomy < PTaxonomy
     branch ? found.each{|tag| tag.delete_branch} : found.each {|tag| delete_tag(tag.name)}
     deleted = tags-before
     # [supplied_count,found_count,deleted_count,deleted_tags,deleted_list]
-    report ? [Ddl.tags.size,found.size,deleted.size,list_tags-before_list] : deleted
+    report ? [Ddl.tags.size,found.size,deleted.size,list_tags-before_list] : [deleted,found]
   end
 
   def query_items(query)
@@ -218,6 +218,10 @@ class Taxonomy < PTaxonomy
 end
 
 class Tag < PTag
+  def self.exists?(name=nil)
+    name.nil? ? self.count > 0 : self.count_by_name(name) > 0
+  end
+
   def initialize(name,tax)
     super(name:name,is_root:false,is_folk:true,taxonomy:tax._id)
     save
@@ -318,7 +322,7 @@ class Tag < PTag
 
   def inspect
     items.empty? ? pretty_items = '' : pretty_items = ", items=#{items.map {|item| item.name}}"
-    "Tag<#{name}: parents=#{get_taxonomy.list_tags_by_id(parents)}, children=#{get_taxonomy.list_tags_by_id(children)}#{pretty_items}>"
+    "Tag<#{name}: parents=#{taxonomy.list_tags_by_id(parents)}, children=#{taxonomy.list_tags_by_id(children)}#{pretty_items}>"
   end
   def to_s; inspect end
 

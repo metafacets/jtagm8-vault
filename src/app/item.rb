@@ -72,8 +72,6 @@ class Item < PItem
 
   def instantiate(entry)
     parse(entry)
-    save
-#    puts "Item.instantiate: name=#{name}, date=#{date}, album=#{album}, tags=#{tags}"
     self
   end
 
@@ -84,6 +82,7 @@ class Item < PItem
   def parse(entry)
     parse_entry(entry)
     parse_content
+    save
   end
 
   def parse_entry(entry)
@@ -93,8 +92,8 @@ class Item < PItem
     self.name = first if first
     Debug.show(class:self.class,method:__method__,note:'2',vars:[['name',name],['rest',rest]])
     if rest
-      self.content = rest.join("\n")
-      Debug.show(class:self.class,method:__method__,note:'2',vars:[['content',content]])
+      self.original_content = rest.join("\n")
+      Debug.show(class:self.class,method:__method__,note:'2',vars:[['original_content',original_content]])
     end
   end
 
@@ -102,23 +101,64 @@ class Item < PItem
     # gets content tags
     # + or - solely instantiate or deprecate the taxonomy
     # otherwise taxonomy gets instantiated and item gets tagged by its leaves
-    unless content.empty?
-      content.scan(/([+|\-|=]?)#([^\s]+)/).each do |op,tag_ddl|
-        Debug.show(class:self.class,method:__method__,note:'1',vars:[['op',op],['tag_ddl',tag_ddl]])
-        if op == '-'
-          self.tags -= get_taxonomy.exstantiate(tag_ddl)
-          Debug.show(class:self.class,method:__method__,note:'2a',vars:[['tags',tags],['get_taxonomy.tags',get_taxonomy.tags]])
-        else
-          leaves = get_taxonomy.instantiate(tag_ddl)
-          Debug.show(class:self.class,method:__method__,note:'2',vars:[['leaves',leaves]])
-          if op == '' || op == "="
-            leaves.each {|tag| tag.union_items([self])}
-            self.tags << leaves
-            Debug.show(class:self.class,method:__method__,note:'2b',vars:[['tags',tags],['get_taxonomy.tags',get_taxonomy.tags]])
+    unless original_content.empty?
+      supplied_ddl = []
+      supplied_tags = []
+      original_content.scan(/([+|\-|=]?)#([^\s]+)/).each do |op,tag_ddl|
+        unless supplied_ddl.include?(tag_ddl)
+          Debug.show(class:self.class,method:__method__,note:'1',vars:[['op',op],['tag_ddl',tag_ddl]])
+          if op == '-'
+            leaves,supplied = get_taxonomy.exstantiate(tag_ddl)
+            self.tags -= leaves
+            Debug.show(class:self.class,method:__method__,note:'2a',vars:[['tags',tags],['get_taxonomy.tags',get_taxonomy.tags]])
+          else
+            leaves,supplied = get_taxonomy.instantiate(tag_ddl)
+            Debug.show(class:self.class,method:__method__,note:'2',vars:[['leaves',leaves]])
+            if op == '' || op == "="
+              leaves.each {|tag| tag.union_items([self])}
+              self.tags << leaves
+              Debug.show(class:self.class,method:__method__,note:'2b',vars:[['tags',tags],['get_taxonomy.tags',get_taxonomy.tags]])
+            end
           end
+          supplied_ddl << tag_ddl
+          supplied_tags |= supplied
         end
       end
+      set_original_tag_ids(supplied_tags)
     end
+  end
+
+  def set_original_tag_ids(supplied_tags)
+    self.original_tag_ids = supplied_tags.map{|tag| [tag.name,tag._id.to_s] unless tag.nil?}.select{|tag| tag unless tag.nil?}.sort_by{|e| e[0].length}.reverse.join(',')
+#    puts "Item.set_original_tag_ids: original_tag_ids=#{original_tag_ids}"
+  end
+
+  def inspect; "#{self.name}\n#{get_content}" end
+
+  def to_s; inspect end
+
+  def get_content
+    result = original_content.dup
+    puts "Item.get_content 1: original_content=#{original_content}, original_tag_ids=#{self.original_tag_ids}"
+    puts "Item.get_content 2: tags.size=#{tags.size}, get_taxonomy.name=#{get_taxonomy.name}, get_taxonomy.count_tags=#{get_taxonomy.count_tags}"
+#    if get_taxonomy.has_tag? && !self.substitutions.nil?
+    if !self.original_tag_ids.nil?
+      # transform substitutions into array of paired old lowercase and new uppercase tag names including unchanged
+      old_id = original_tag_ids.split(',').each_slice(2).to_a
+      old_new = old_id.map{|name,id| Tag.get_by_id(id).nil? ? [name,name.upcase] : [name,Tag.get_by_id(id).name.upcase]}
+      puts "Item.get_content 3: old_new=#{old_new}"
+      # replace old with new tag names, old_new start with longest first with case transformation preventing nested substitutions
+      tail = original_content.dup
+      while tail =~ /([+|\-|=]?)#([^\s]+)(.*)/
+        ddl,tail = $2,$3
+        ddl_sub = ddl.dup
+        old_new.each{|old,new| ddl_sub.gsub!(old,new)}
+        result.gsub!(/#{ddl}#{tail}$/,"#{ddl_sub.downcase}#{tail}")
+        puts "Item.get_content 4: ddl=#{ddl}, post=#{tail}, ddl_sub=#{ddl_sub}"
+      end
+    end
+    puts "Item.get_content 5: result=#{result}"
+    result
   end
 
   def query_tags

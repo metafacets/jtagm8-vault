@@ -60,8 +60,36 @@ describe Item do
     alm = tax.add_album('alm')
     item = alm.add_item('i1')
     subject {item}
-    methods = [:date, :name, :content, :tags, :sees, :instantiate, :parse, :parse_entry, :parse_content]
+    methods = [:date, :name, :original_content, :original_tag_ids, :get_content, :tags, :sees, :instantiate, :parse, :parse_entry, :parse_content]
     methods.each {|method| it method do expect(subject).to respond_to(method) end }
+  end
+  context :get_content do
+    # test = entry,renamed tag[before,after],tag_list[before,after],get_content[before,after]
+    tests = [["i1\n#abc,bc abc bc abc",['bc','ab'],[['abc','bc'],['ab','abc']],['#abc,bc abc bc abc','#abc,ab abc bc abc']]\
+            ,["i1\n#abc,ab abc bc abc",['ab','bc'],[['ab','abc'],['abc','bc']],['#abc,ab abc bc abc','#abc,bc abc bc abc']]\
+            ]
+    tests.each do |test|
+      describe "Entry=\"#{test[0]}\" renaming tag \"#{test[1][0]}\" to \"#{test[1][1]}\""
+      Tagm8Db.wipe
+      tax1 = Taxonomy.new('tax1')
+      alm1 = tax1.add_album('alm1')
+      itm1 = alm1.add_item(test[0])
+      itm1_original_content1 = itm1.original_content
+      itm1_get_content1 = itm1.get_content
+      tax1_list_tags1 = tax1.list_tags.sort
+      puts "Item_spec.rename tags: itm1_get_content1=#{itm1_get_content1}, tax1_list_tags1=#{tax1_list_tags1}"
+      tag1 = tax1.get_tag_by_name(test[1][0])
+      tag1.rename(test[1][1])
+      itm1_original_content2 = itm1.original_content
+      itm1_get_content2 = itm1.get_content
+      tax1_list_tags2 = tax1.list_tags.sort
+      it "Before rename: Item original_content = \"#{test[3][0]}\"" do expect(itm1_original_content1).to eq(test[3][0]) end
+      it "Before rename: Item get_content = \"#{test[3][0]}\"" do expect(itm1_get_content1).to eq(test[3][0]) end
+      it "Before rename: list_tags = \"#{test[2][0]}\"" do expect(tax1_list_tags1).to eq(test[2][0]) end
+      it "After rename: Item original_content = \"#{test[3][0]}\"" do expect(itm1_original_content2).to eq(test[3][0]) end
+      it "After rename: Item get_content = \"#{test[3][1]}\"" do expect(itm1_get_content2).to eq(test[3][1]) end
+      it "After rename: list_tags = \"#{test[2][1]}\"" do expect(tax1_list_tags2).to eq(test[2][1]) end
+    end
   end
   describe :initialize do
     # test = [[entry,name,content,tags,tax.tags]]
@@ -95,40 +123,40 @@ describe Item do
       describe test[0] do
         describe :parse_entry do
           Tagm8Db.wipe
-          tax = Taxonomy.new
+          tax = Taxonomy.new('tax1')
           alm = tax.add_album('alm')
           item = Item.new(alm)
           item.parse_entry(test[0])
           it "name = #{test[1]}" do expect(item.name).to eq(test[1]) end
-          it "content = #{test[2]}" do expect(item.content).to eq(test[2]) end
+          it "content = #{test[2]}" do expect(item.get_content).to eq(test[2]) end
         end
         describe :parse_content do
           Tagm8Db.wipe
-          tax = Taxonomy.new
+          tax = Taxonomy.new('tax1')
           alm = tax.add_album('alm')
           item = Item.new(alm)
           item.name = test[1]
-          item.content = test[2]
+          item.original_content = test[2]
           item.parse_content
           item_tags = item.tags.map {|tag| tag.name.to_sym}.sort
           it "tags = #{test[3]}" do expect(item_tags).to eq(test[3]) end
         end
         describe :parse do
           Tagm8Db.wipe
-          tax = Taxonomy.new
+          tax = Taxonomy.new('tax1')
           alm = tax.add_album('alm')
           item = Item.new(alm)
           item.parse(test[0])
           item_tags = item.tags.map {|tag| tag.name.to_sym}.sort
           tax_tags = tax.tags.map {|tag| tag.name.to_sym}.sort
           it "name = #{test[1]}" do expect(item.name).to eq(test[1]) end
-          it "content = #{test[2]}" do expect(item.content).to eq(test[2]) end
+          it "content = #{test[2]}" do expect(item.get_content).to eq(test[2]) end
           it "tags = #{test[3]}" do expect(item_tags).to eq(test[3]) end
           it "Taxonomy.tags = #{test[4]}" do expect(tax_tags).to eq(test[4]) end
         end
         describe :instantiate do
           Tagm8Db.wipe
-          tax = Taxonomy.new
+          tax = Taxonomy.new('tax1')
           alm = tax.add_album('alm')
           item = Item.new(alm)
           item.instantiate(test[0])
@@ -136,32 +164,43 @@ describe Item do
           tax_tags = tax.tags.map {|tag| tag.name.to_sym}.sort
           items = alm.items.map {|i| i.name}
           it "name = #{test[1]}" do expect(item.name).to eq(test[1]) end
-          it "content = #{test[2]}" do expect(item.content).to eq(test[2]) end
+          it "content = #{test[2]}" do expect(item.get_content).to eq(test[2]) end
           it "tags = #{test[3]}" do expect(item_tags).to eq(test[3]) end
           it "Taxonomy.tags = #{test[4]}" do expect(tax_tags).to eq(test[4]) end
           it "items = ['Name']" do expect(items).to eq(['Name']) end
         end
         describe :initialize do
           Tagm8Db.wipe
-          tax = Taxonomy.new
+          tax = Taxonomy.new('tax1')
           alm = tax.add_album('alm')
           item = alm.add_item(test[0])
           item_tags = item.tags.map {|tag| tag.name.to_sym}.sort
           tax_tags = tax.tags.map {|tag| tag.name.to_sym}.sort
           items = alm.items.map {|i| i.name}
           it "name = #{test[1]}" do expect(item.name).to eq(test[1]) end
-          it "content = #{test[2]}" do expect(item.content).to eq(test[2]) end
+          it "content = #{test[2]}" do expect(item.get_content).to eq(test[2]) end
           it "tags = #{test[3]}" do expect(item_tags).to eq(test[3]) end
           it "Taxonomy.tags = #{test[4]}" do expect(tax_tags).to eq(test[4]) end
           it "items = ['Name']" do expect(items).to eq(['Name']) end
         end
         describe :query_tags do
           Tagm8Db.wipe
-          tax = Taxonomy.new
+          tax = Taxonomy.new('tax1')
           alm = tax.add_album('alm')
           item = alm.add_item(test[0])
           queried_tags = item.query_tags.map {|tag| tag.name.to_sym}.sort
           it "query_tags = #{test[3]}" do expect(queried_tags).to eq(test[3]) end
+        end
+        describe :get_taxonomy do
+          Tagm8Db.wipe
+          tax = Taxonomy.new('tax1')
+          alm = tax.add_album('alm')
+          item = alm.add_item(test[0])
+          item_tag = item.tags[0]
+          item_tag.nil? ? tag_tag = nil : Tag.get_by_id(item_tag._id)
+          it "item.get_taxonomy ok" do expect(item.get_taxonomy._id).to eq(tax._id) end
+          it "item.get_taxonomy.count_tags ok" do expect(item.get_taxonomy.count_tags).to eq(tax.count_tags) end
+          it "item_tag found via Tag" do expect(item_tag.nil?).to eq(tag_tag.nil?) end
         end
       end
     end

@@ -30,8 +30,8 @@ class PTaxonomy
   key :dag, String
   many :albums, :class_name => 'PAlbum'
 
-  def self.count_by_name(name)
-    PTaxonomy.where(name:name.to_s).size
+  def self.count_by_name(name=nil)
+    name.nil? ? PTaxonomy.count : PTaxonomy.where(name:name.to_s).size
   end
 
   def self.get_by_name(name)
@@ -166,13 +166,17 @@ class PTag
   key :item_ids, Array
   many :items, :class_name => 'PItem', :in => :item_ids
 
-  def self.count_by_name(name)
-    PTag.where(name:name.to_s).size
+  def self.count_by_name(name=nil)
+    name.nil? ? PTag.count : PTag.where(name:name.to_s).size
   end
 
   # to be used by Facade.list|rename|delete_tags
   def self.get_by_name(name)
     PTag.where(name:name.to_s)
+  end
+
+  def self.get_by_id(id)
+    PTag.first(_id:id.to_s)
   end
 
   def get_taxonomy
@@ -295,14 +299,15 @@ class PItem
   include MongoMapper::Document
   key :name, String
   key :date, String
-  key :content, String
+  key :original_content, String
+  key :original_tag_ids, String
   key :sees, Array
   key :tag_ids, Array
   many :tags, :class_name => 'PTag', :in => :tag_ids
   belongs_to :album, :class_name => 'PAlbum'
 
-  def self.count_by_name(name)
-    PItem.where(name:name.to_s).size
+  def self.count_by_name(name=nil)
+    name.nil? ? PItem.count : PItem.where(name:name.to_s).size
   end
 
   # to be used by Facade.list|rename|delete_items

@@ -106,7 +106,9 @@ describe Item do
             ,["Name\nContent\ncont #a","Name","Content\ncont #a",[:a],[:a]]\
             ,["Name\nContent\n#a cont","Name","Content\n#a cont",[:a],[:a]]\
             ,["Name\nContent #a #b","Name","Content #a #b",[:a,:b],[:a,:b]]\
+            ,["Name\nContent #a #b_1","Name","Content #a #b_1",[:a,:b_1],[:a,:b_1]]\
             ,["Name\nContent #a\n#b","Name","Content #a\n#b",[:a,:b],[:a,:b]]\
+            ,["Name\nContent #a\n#b_1","Name","Content #a\n#b_1",[:a,:b_1],[:a,:b_1]]\
             ,["Name\nContent #:a<:b\ncont","Name","Content #:a<:b\ncont",[:a],[:a,:b]]\
             ,["Name\nContent =#:a<:b\ncont","Name","Content =#:a<:b\ncont",[:a],[:a,:b]]\
             ,["Name\nContent +#:a<:b\ncont","Name","Content +#:a<:b\ncont",[],[:a,:b]]\
@@ -119,7 +121,7 @@ describe Item do
             ,["Name\n#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a","Name","#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a",[:a,:b,:d,:e,:f],[:a,:b,:c,:d,:e,:f]]\
             ,["Name\n#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a -#f,b,c","Name","#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a -#f,b,c",[:a,:d,:e],[:a,:d,:e]]\
             ]
-#            ,["Name\n#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a -#f,b,c","Name","#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a -#fdeleted,bdeleted,cdeleted",[:a,:d,:e],[:a,:d,:e]]\
+#            ,["Name\n#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a -#f,b,c","Name","#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a -#f_deleted,b_deleted,c_deleted",[:a,:d,:e],[:a,:d,:e]]\
     tests.each do |test|
       describe test[0] do
         describe :parse_entry do
@@ -197,29 +199,43 @@ describe Item do
           tax = Taxonomy.new('tax1')
           alm = tax.add_album('alm')
           item = alm.add_item(test[0])
-          item_tag = item.tags.select{|tag| tag.name == 'a'}.first
+          tag = tax.get_tag_by_name('a')
+#          item_tag = item.tags.select{|tag| tag.name == 'a'}.first
+          item_tag = item.tags.select{|itag| itag._id == tag._id}.first
           unless item_tag.nil?
 #            puts "get_content and tag renaming: item.original_tag_ids.include?(item_tag._id)=#{item.original_tag_ids.include?(item_tag._id)}, item_tag._id=#{item_tag._id}, item.original_tag_ids=#{item.original_tag_ids}"
             tax_id = tax._id
             item_tax_id = item.get_taxonomy._id
             item_tax_count_tags = item.get_taxonomy.count_tags
             tax_count_tags = tax.count_tags
-#            tag_tag = Tag.get_by_id(item_tag._id)
+            tag_tag = Tag.get_by_id(tag._id)
             original_tags_include_item_tag = item.original_tag_ids.include?(item_tag._id)
-            tag = tax.get_tag_by_name('a')
-            tag.rename('renamed')
-            new_content = test[2].gsub('a','renamed')
             tag_name = tag.name
-#            tag_tag_name = tag_tag.name
-#            item_tag_name = item_tag.name
-            item_get_content = item.get_content
+            tag_tag_name = tag_tag.name
+            item_tag_name = item_tag.name
+            tag.rename('a_renamed1')
+            new_content1 = test[2].gsub('a','a_renamed1')
+            tag_rename1 = tag.name
+#            tag_tag_rename = tag_tag.name
+#            item_tag_rename = item_tag.name
+            item_get_content1 = item.get_content
+            tag.rename('a_renamed2')
+            new_content2 = test[2].gsub('a','a_renamed2')
+            tag_rename2 = tag.name
+            item_get_content2 = item.get_content
             it 'item.get_taxonomy ok' do expect(item_tax_id).to eq(tax_id) end
             it 'item.get_taxonomy.count_tags ok' do expect(item_tax_count_tags).to eq(tax_count_tags) end
             it 'item.original_tag_ids.include?(item_tag._id)' do expect(original_tags_include_item_tag).to be_truthy end
-            it 'tag is renamed' do expect(tag_name).to eq('renamed') end
-#            it 'tag_tag is renamed' do expect(tag_tag_name).to eq('renamed') end
-#            it 'item_tag is renamed' do expect(item_tag_name).to eq('renamed') end
-            it 'item content uses renamed tag' do expect(item_get_content).to eq(new_content) end
+            it 'tag has original name' do expect(tag_name).to eq('a') end
+            it 'tag has original name' do expect(tag_tag_name).to eq('a') end
+            it 'tag_tag has original name' do expect(tag_tag_name).to eq('a') end
+            it 'item_tag has original name' do expect(item_tag_name).to eq('a') end
+            it 'tag is renamed' do expect(tag_rename1).to eq('a_renamed1') end
+#            it 'tag_tag is renamed' do expect(tag_tag_rename).to eq('a_renamed1') end
+#            it 'item_tag is renamed' do expect(item_tag_rename).to eq('a_renamed1') end
+            it 'item content uses renamed tag' do expect(item_get_content1).to eq(new_content1) end
+            it 'tag is renamed again' do expect(tag_rename2).to eq('a_renamed2') end
+            it 'item content uses fresh renamed tag' do expect(item_get_content2).to eq(new_content2) end
           end
         end
       end

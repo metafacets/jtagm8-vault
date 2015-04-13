@@ -130,7 +130,7 @@ class Item < PItem
 
   def set_original_tag_ids(supplied_tags)
     self.original_tag_ids = supplied_tags.map{|tag| [tag.name,tag._id.to_s] unless tag.nil?}.select{|tag| tag unless tag.nil?}.sort_by{|e| e[0].length}.reverse.join(',')
-#    puts "Item.set_original_tag_ids: original_tag_ids=#{original_tag_ids}"
+    #puts "Item.set_original_tag_ids: original_tag_ids=#{original_tag_ids}"
   end
 
   def inspect; "#{self.name}\n#{get_content}" end
@@ -139,23 +139,37 @@ class Item < PItem
 
   def get_content
     result = original_content.dup
-    puts "Item.get_content 1: original_content=#{original_content}, original_tag_ids=#{self.original_tag_ids}"
-    puts "Item.get_content 2: tags.size=#{tags.size}, get_taxonomy.name=#{get_taxonomy.name}, get_taxonomy.count_tags=#{get_taxonomy.count_tags}, get_taxonomy.has_tag?=#{get_taxonomy.has_tag?}"
+    #puts "Item.get_content 1: original_content=#{original_content}, original_tag_ids=#{self.original_tag_ids}"
+    #puts "Item.get_content 2: tags.size=#{tags.size}, get_taxonomy.name=#{get_taxonomy.name}, get_taxonomy.count_tags=#{get_taxonomy.count_tags}, get_taxonomy.has_tag?=#{get_taxonomy.has_tag?}"
+    #puts "Item.get_content 2a: tags.map{|tag| [tag.name,tag._id.to_s]}=#{tags.map{|tag| [tag.name,tag._id.to_s]}}" unless tags.empty?
     if !self.original_tag_ids.nil?
       # transform substitutions into array of paired old lowercase and new uppercase tag names including unchanged
       old_id = original_tag_ids.split(',').each_slice(2).to_a
-#      old_new = old_id.map{|name,id| Tag.get_by_id(id).nil? ? [name,"#{name}deleted".upcase] : [name,Tag.get_by_id(id).name.upcase]}
       old_new = old_id.map{|name,id| Tag.get_by_id(id).nil? ? [name,name.upcase] : [name,Tag.get_by_id(id).name.upcase]}
-      puts "Item.get_content 3: old_new=#{old_new}"
+#      old_new = old_id.map do |name,id|
+#        if !Tag.get_by_id(id).nil?                # as it should be found with latest name
+#          [name,Tag.get_by_id(id).name.upcase]
+#        else                                      # try 2 alternative methods of locating partially propogated tags
+#          tax_tag = get_taxonomy.get_tag_by_name(name)
+#          if (!tax_tag.nil? && tax_tag._id == id) || tags.empty? || !tags.select{|tag| tag.name == name && tag._id.to_s == id}.empty?
+#            puts "Item.get_content 3a: same"
+#            [name,name.upcase]
+#          else                                    # tag must be deleted
+#            puts "Item.get_content 3a: deleted"
+#            [name,"#{name}_deleted".upcase]
+#          end
+#        end
+#      end
+      #puts "Item.get_content 3: old_new=#{old_new}"
       # replace old with new tag names, old_new start with longest first with case transformation preventing nested substitutions
       tail = original_content.dup
       while tail =~ /#([^\s]+)((.|\n)*)/
         ddl,tail = $1,$2
         ddl_sub = ddl.dup
         old_new.each{|old,new| ddl_sub.gsub!(old,new)}
-        puts "Item.get_content 4: ddl=#{ddl}, tail=#{tail}, ddl_sub=#{ddl_sub}"
+        #puts "Item.get_content 4: ddl=#{ddl}, tail=#{tail}, ddl_sub=#{ddl_sub}"
         result.gsub!("##{ddl}#{tail}","##{ddl_sub.downcase}#{tail}")
-        puts "Item.get_content 5: result=#{result}"
+        #puts "Item.get_content 5: result=#{result}"
       end
     end
     result

@@ -44,12 +44,12 @@ class Taxonomy < PTaxonomy
   def dag?; self.dag != 'false' end
   def set_dag(dag)
     self.dag = dag if ['prevent','fix','false'].include?(dag)
-    self.save
+    save
   end
 
   def rename(name)
     self.name = name
-    self.save
+    save
   end
 
   def delete_tag(name)
@@ -229,7 +229,7 @@ class Tag < PTag
 
   def rename(name)
     self.name = name
-    self.save
+    save
   end
 
   def delete_parent(parent)

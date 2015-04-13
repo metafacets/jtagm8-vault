@@ -7,6 +7,7 @@ module Tagm8Db
     MongoMapper.connection = Mongo::Connection.new('localhost')
     MongoMapper.database = db
     PTaxonomy.ensure_index :name, :unique => true
+    PTag.ensure_index :_id
     PTag.ensure_index :name
     PTag.ensure_index :is_root
     PTag.ensure_index :is_folk

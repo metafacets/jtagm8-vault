@@ -126,44 +126,48 @@ class Item < PItem
           supplied_tags |= supplied
         end
       end
-      set_original_tag_ids(supplied_tags)
+      set_logical_content(supplied_tags)
       save
     end
   end
 
-  def set_original_tag_ids(supplied_tags)
-    self.original_tag_ids = supplied_tags.map{|tag| [tag.name,tag._id.to_s] unless tag.nil?}.select{|tag| tag unless tag.nil?}.sort_by{|e| e[0].length}.reverse.join(',')
-    #puts "Item.set_original_tag_ids: original_tag_ids=#{original_tag_ids}"
+  def set_logical_content(supplied_tags)
+    # sets original_tag_ids and logical_content (where tags are represented by their ids for easy name substitution)
+    result = original_content.dup
+    unless supplied_tags.empty?
+      name_id = supplied_tags.map{|tag| [tag.name,tag._id.to_s] unless tag.nil?}.select{|tag| tag unless tag.nil?}.sort_by{|e| e[0].length}.reverse
+      unless name_id.empty?
+        self.original_tag_ids = name_id.join(',')
+        tail = original_content.dup
+        while tail =~ /#([^\s]+)((.|\n)*)/
+          ddl,tail = $1,$2
+          ddl_sub = ddl.dup
+          name_id.each{|name,id| ddl_sub.gsub!(name,id.upcase)}
+          result.gsub!("##{ddl}#{tail}","##{ddl_sub.downcase}#{tail}")
+        end
+      end
+    end
+    self.logical_content = result
+  end
+
+  def get_content
+    # re-generates item content using latest tag names
+    # substituting logical_content tag ids for names if they exist or else with original names marked as deleted
+    result = logical_content.dup
+    unless self.original_tag_ids.nil?
+      # transform substitutions into array of paired old lowercase and new uppercase tag names including unchanged
+      name_id = original_tag_ids.split(',').each_slice(2).to_a
+      name_id.each do |orig_name,id|
+        Tag.get_by_id(id).nil? ? name = "#{orig_name}_deleted" : name = Tag.get_by_id(id).name
+        result.gsub!(id,name)
+      end
+    end
+    result
   end
 
   def inspect; "#{self.name}\n#{get_content}" end
 
   def to_s; inspect end
-
-  def get_content
-    # re-generates item content using latest tag names
-    result = original_content.dup
-#    puts "Item.get_content 1: original_content=#{original_content}, original_tag_ids=#{self.original_tag_ids}"
-#    puts "Item.get_content 2: tags.size=#{tags.size}, get_taxonomy.name=#{get_taxonomy.name}, get_taxonomy.count_tags=#{get_taxonomy.count_tags}, get_taxonomy.has_tag?=#{get_taxonomy.has_tag?}"
-#    puts "Item.get_content 3: tags.map{|tag| [tag.name,tag._id.to_s]}=#{tags.map{|tag| [tag.name,tag._id.to_s]}}" unless tags.empty?
-    if !self.original_tag_ids.nil?
-      # transform substitutions into array of paired old lowercase and new uppercase tag names including unchanged
-      old_id = original_tag_ids.split(',').each_slice(2).to_a
-      old_new = old_id.map{|name,id| Tag.get_by_id(id).nil? ? [name,"#{name}_deleted".upcase] : [name,Tag.get_by_id(id).name.upcase]}
-      #puts "Item.get_content 3: old_new=#{old_new}"
-      # replace old with new tag names, old_new start with longest first with case transformation preventing nested substitutions
-      tail = original_content.dup
-      while tail =~ /#([^\s]+)((.|\n)*)/
-        ddl,tail = $1,$2
-        ddl_sub = ddl.dup
-        old_new.each{|old,new| ddl_sub.gsub!(old,new)}
-        #puts "Item.get_content 4: ddl=#{ddl}, tail=#{tail}, ddl_sub=#{ddl_sub}"
-        result.gsub!("##{ddl}#{tail}","##{ddl_sub.downcase}#{tail}")
-        #puts "Item.get_content 5: result=#{result}"
-      end
-    end
-    result
-  end
 
   def query_tags
     # get tags matching this item - the long way from the Taxonomy

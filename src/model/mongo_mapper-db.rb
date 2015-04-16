@@ -305,6 +305,7 @@ class PItem
   key :name, String
   key :date, String
   key :original_content, String
+  key :logical_content, String
   key :original_tag_ids, String
   key :sees, Array
   key :tag_ids, Array

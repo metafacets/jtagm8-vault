@@ -77,12 +77,12 @@ describe Item do
       itm1_original_content1 = itm1.original_content
       itm1_get_content1 = itm1.get_content
       tax1_list_tags1 = tax1.list_tags.sort
-      puts "Item_spec.rename tags: itm1_get_content1=#{itm1_get_content1}, tax1_list_tags1=#{tax1_list_tags1}"
       tag1 = tax1.get_tag_by_name(test[1][0])
       tag1.rename(test[1][1])
       itm1_original_content2 = itm1.original_content
       itm1_get_content2 = itm1.get_content
       tax1_list_tags2 = tax1.list_tags.sort
+      #puts "Item_spec.rename tags: itm1_get_content1=#{itm1_get_content1}, tax1_list_tags1=#{tax1_list_tags1}, itm1_get_content2=#{itm1_get_content2}"
       it "Before rename: Item original_content = \"#{test[3][0]}\"" do expect(itm1_original_content1).to eq(test[3][0]) end
       it "Before rename: Item get_content = \"#{test[3][0]}\"" do expect(itm1_get_content1).to eq(test[3][0]) end
       it "Before rename: list_tags = \"#{test[2][0]}\"" do expect(tax1_list_tags1).to eq(test[2][0]) end
@@ -92,7 +92,7 @@ describe Item do
     end
   end
   describe :initialize do
-    # test = [[entry,name,content,tags,tax.tags]]
+    # test = [[entry,name,get_content,tags,tax.tags]]
     tests = [["Name\nContent","Name","Content",[],[],[]]\
             ,["Name\nContent\ncont","Name","Content\ncont",[],[]]\
             ,["Name\n#a Content","Name","#a Content",[:a],[:a]]\
@@ -119,9 +119,8 @@ describe Item do
             ,["Name\nContent #:a>[:b,:c>[:d,:e]]\ncont #a #b,f","Name","Content #:a>[:b,:c>[:d,:e]]\ncont #a #b,f",[:a,:b,:d,:e,:f],[:a,:b,:c,:d,:e,:f]]\
             ,["Name\n#a Content #:a>[:b,:c>[:d,:e]]\ncont #b,f","Name","#a Content #:a>[:b,:c>[:d,:e]]\ncont #b,f",[:a,:b,:d,:e,:f],[:a,:b,:c,:d,:e,:f]]\
             ,["Name\n#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a","Name","#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a",[:a,:b,:d,:e,:f],[:a,:b,:c,:d,:e,:f]]\
-            ,["Name\n#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a -#f,b,c","Name","#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a -#f,b,c",[:a,:d,:e],[:a,:d,:e]]\
+            ,["Name\n#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a -#f,b,c","Name","#b_deleted,f_deleted Content #:a>[:b_deleted,:c_deleted>[:d,:e]]\ncont #a -#f_deleted,b_deleted,c_deleted",[:a,:d,:e],[:a,:d,:e]]\
             ]
-#            ,["Name\n#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a -#f,b,c","Name","#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a -#f_deleted,b_deleted,c_deleted",[:a,:d,:e],[:a,:d,:e]]\
     tests.each do |test|
       describe test[0] do
         describe :parse_entry do
@@ -130,8 +129,11 @@ describe Item do
           alm = tax.add_album('alm')
           item = Item.new(alm)
           item.parse_entry(test[0])
-          it "name = #{test[1]}" do expect(item.name).to eq(test[1]) end
-          it "content = #{test[2]}" do expect(item.get_content).to eq(test[2]) end
+          item_name = item.name
+          item_original_content = item.original_content
+          item_original_content_expected = test[2].gsub('_deleted','')
+          it "name = #{test[1]}" do expect(item_name).to eq(test[1]) end
+          it "_original_content = #{item_original_content_expected}" do expect(item_original_content).to eq(item_original_content_expected) end
         end
         describe :parse_content do
           Tagm8Db.wipe
@@ -139,9 +141,11 @@ describe Item do
           alm = tax.add_album('alm')
           item = Item.new(alm)
           item.name = test[1]
-          item.original_content = test[2]
+          item.original_content = test[2].gsub('_deleted','')
           item.parse_content
+          item_get_content = item.get_content
           item_tags = item.tags.map {|tag| tag.name.to_sym}.sort
+          it "content = #{test[2]}" do expect(item_get_content).to eq(test[2]) end
           it "tags = #{test[3]}" do expect(item_tags).to eq(test[3]) end
         end
         describe :parse do
@@ -150,10 +154,12 @@ describe Item do
           alm = tax.add_album('alm')
           item = Item.new(alm)
           item.parse(test[0])
+          item_name = item.name
+          item_content = item.get_content
           item_tags = item.tags.map {|tag| tag.name.to_sym}.sort
           tax_tags = tax.tags.map {|tag| tag.name.to_sym}.sort
-          it "name = #{test[1]}" do expect(item.name).to eq(test[1]) end
-          it "content = #{test[2]}" do expect(item.get_content).to eq(test[2]) end
+          it "name = #{test[1]}" do expect(item_name).to eq(test[1]) end
+          it "content = #{test[2]}" do expect(item_content).to eq(test[2]) end
           it "tags = #{test[3]}" do expect(item_tags).to eq(test[3]) end
           it "Taxonomy.tags = #{test[4]}" do expect(tax_tags).to eq(test[4]) end
         end
@@ -163,11 +169,13 @@ describe Item do
           alm = tax.add_album('alm')
           item = Item.new(alm)
           item.instantiate(test[0])
+          item_name = item.name
+          item_content = item.get_content
           item_tags = item.tags.map {|tag| tag.name.to_sym}.sort
           tax_tags = tax.tags.map {|tag| tag.name.to_sym}.sort
           items = alm.items.map {|i| i.name}
-          it "name = #{test[1]}" do expect(item.name).to eq(test[1]) end
-          it "content = #{test[2]}" do expect(item.get_content).to eq(test[2]) end
+          it "name = #{test[1]}" do expect(item_name).to eq(test[1]) end
+          it "content = #{test[2]}" do expect(item_content).to eq(test[2]) end
           it "tags = #{test[3]}" do expect(item_tags).to eq(test[3]) end
           it "Taxonomy.tags = #{test[4]}" do expect(tax_tags).to eq(test[4]) end
           it "items = ['Name']" do expect(items).to eq(['Name']) end
@@ -177,11 +185,13 @@ describe Item do
           tax = Taxonomy.new('tax1')
           alm = tax.add_album('alm')
           item = alm.add_item(test[0])
+          item_name = item.name
+          item_content = item.get_content
           item_tags = item.tags.map {|tag| tag.name.to_sym}.sort
           tax_tags = tax.tags.map {|tag| tag.name.to_sym}.sort
           items = alm.items.map {|i| i.name}
-          it "name = #{test[1]}" do expect(item.name).to eq(test[1]) end
-          it "content = #{test[2]}" do expect(item.get_content).to eq(test[2]) end
+          it "name = #{test[1]}" do expect(item_name).to eq(test[1]) end
+          it "content = #{test[2]}" do expect(item_content).to eq(test[2]) end
           it "tags = #{test[3]}" do expect(item_tags).to eq(test[3]) end
           it "Taxonomy.tags = #{test[4]}" do expect(tax_tags).to eq(test[4]) end
           it "items = ['Name']" do expect(items).to eq(['Name']) end

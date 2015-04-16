@@ -175,9 +175,9 @@ class PTag
     name.nil? ? PTag.count : PTag.where(name:name.to_s).size
   end
 
-  # to be used by Facade.list|rename|delete_tags
+  # to be used by Facade.list|rename|delete_tags where taxonomy_name is nil
   def self.get_by_name(name)
-    PTag.where(name:name.to_s)
+    PTag.where(name:name.to_s).all
   end
 
   def self.get_by_id(id)
@@ -273,7 +273,7 @@ class PAlbum
 
   # to be used by Facade.list|rename|delete_albums
   def self.get_by_name(name)
-    PAlbum.where(name:name.to_s)
+    PAlbum.where(name:name.to_s).all
   end
 
   def self.list
@@ -317,7 +317,7 @@ class PItem
 
   # to be used by Facade.list|rename|delete_items
   def self.get_by_name(name)
-    PItem.where(name:name.to_s)
+    PItem.where(name:name.to_s).all
   end
 
 #  # only needed if Item.open(name) is supported

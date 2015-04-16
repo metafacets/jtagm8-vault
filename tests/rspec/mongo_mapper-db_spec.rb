@@ -32,14 +32,16 @@ describe 'Taxonomy, Tag, Album, Item composites round-tripping checks' do
     i1_t1 = i1.tags[0]
     i1_t1_id = i1_t1._id
     i1_t1_name = i1_t1.name
-#    tag_get_by_name_exists = Tag.get_by_name(i1_t1_name)
-#    tag_get_id_by_name_exists = tag_get_by_name_exists._id
-#    tag_get_by_name_nonexistent = Tag.get_by_name('xx')
+    # Item.Tag = Tag
+    tag_get_id_by_name_exists = Tag.get_by_name(i1_t1_name).first._id                     # Tag.name not unique: therefore get first of returned array
+    tag_get_by_name_nonexistent = Tag.get_by_name('xx')
     tag_get_name_by_id_exists = Tag.get_by_id(i1_t1_id).name
     tag_get_by_id_nonexistent = Tag.get_by_id('xx')
-    #puts "Tag.class_methods: tax.list_tags=#{tax.list_tags}, tax.count_tags=#{tax.count_tags}"
-    #puts "Tag.class_methods: tax.count_tags=#{tax.count_tags('c2')}, Tag.count_by_name=#{Tag.count_by_name('c2')}"
-    #puts "Tag.class_methods: i1_t1_name=#{i1_t1_name}, tag_get_name_by_id_exists=#{tag_get_name_by_id_exists}"
+    # Item.Tag = Item.Album.Taxonomy.Tag
+    i1_tax_get_tag_id_by_name_exists = i1.get_taxonomy.get_tag_by_name(i1_t1_name)._id    # Taxonomy.Tag.name is unique
+    i1_tax_get_tag_by_name_nonexistent = i1.get_taxonomy.get_tag_by_name('xx')
+    i1_tax_get_tag_name_by_id_exists = i1.get_taxonomy.get_tag_by_id(i1_t1_id).name
+    i1_tax_get_tag_by_id_nonexistent = i1.get_taxonomy.get_tag_by_id('xx')
     it "Item.get_taxonomy.name" do expect(i1_tax_name).to eq(tax_name) end
     it "Item.get_taxonomy._id" do expect(i1_tax_id).to eq(tax_id) end
     it "Taxonomy.count_by_name" do expect(tax_count).to eq(1) end
@@ -58,9 +60,13 @@ describe 'Taxonomy, Tag, Album, Item composites round-tripping checks' do
     it "tax.count_tags(non-existent)" do expect(tax_count_tag_nonexistent).to eq(0) end
     it ":count_by_name exists" do expect(tag_count_by_name_exists).to eq(1) end
     it ":count_by_name non-existent" do expect(tax_count_by_name_nonexistent).to eq(0) end
-#    it ":get_by_name exists" do expect(tag_get_id_by_name_exists).to eq(i1_t1_id) end
-#    it ":get_by_name non-existent" do expect(tag_get_by_name_nonexistent).to eq(nil) end
+    it ":get_by_name exists" do expect(tag_get_id_by_name_exists).to eq(i1_t1_id) end
+    it ":get_by_name non-existent" do expect(tag_get_by_name_nonexistent).to eq([]) end
     it ":get_by_id exists" do expect(tag_get_name_by_id_exists).to eq(i1_t1_name) end
     it ":get_by_id non-existent" do expect(tag_get_by_id_nonexistent).to eq(nil) end
+    it ":get_taxonomy.get_tag_by_name exists" do expect(i1_tax_get_tag_id_by_name_exists).to eq(i1_t1_id) end
+    it ":get_taxonomy.get_tag_by_name non-existent" do expect(i1_tax_get_tag_by_name_nonexistent).to eq(nil) end
+    it ":get_taxonomy.get_tag_by_id exists" do expect(i1_tax_get_tag_name_by_id_exists).to eq(i1_t1_name) end
+    it ":get_taxonomy.get_tag_by_id non-existent" do expect(i1_tax_get_tag_by_id_nonexistent).to eq(nil) end
   end
 end

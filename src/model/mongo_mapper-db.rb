@@ -330,6 +330,11 @@ class PItem
     PItem.all.map {|tax| tax.name}
   end
 
+  def get_tag_by_id(id)
+    tags.select{|tag| tag._id == id}.first
+#    PItem.all(:_id => self._id, :tag_ids => id).first
+  end
+
   def union_tags(tags)
     self.tags |= tags.map{|tag| tag._id.to_s}
   end

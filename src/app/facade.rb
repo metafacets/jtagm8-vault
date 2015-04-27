@@ -5,7 +5,7 @@ class Facade
   attr_accessor :taxonomy, :album
   include Singleton
 
-  def name_ok?(name) name =~ /[A-Za-z0-9_]+/ end
+  def name_ok?(name) name =~ /^[A-Za-z0-9_]+$/ end
 
   def grammar(msg)
     # convert nouns from plural to singular form excluding 'n of m' groups
@@ -21,7 +21,7 @@ class Facade
   def add_taxonomy(taxonomy_name,dag='prevent')
     begin
       raise "name taken" if Taxonomy.exists?(taxonomy_name)
-      raise "\"#{taxonomy_name}\" invalid name - use alphanumeric characters only" unless name_ok?(taxonomy_name)
+      raise "name invalid - use alphanumeric and _ characters only" unless name_ok?(taxonomy_name)
       raise "dag \"#{dag}\" invalid - use prevent, fix or free" unless ['prevent','fix','free'].include?(dag)
       Taxonomy.new(taxonomy_name,dag)
       raise "taxonomy \"#{taxonomy_name}\" remains non-existent" unless Taxonomy.exists?(taxonomy_name)
@@ -34,7 +34,7 @@ class Facade
   def rename_taxonomy(taxonomy_name,new_name)
     begin
       raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-      raise "\"#{new_name}\" invalid name - use alphanumeric characters only" unless name_ok?(new_name)
+      raise "name invalid - use alphanumeric and _ characters only" unless name_ok?(new_name)
       tax = Taxonomy.get_by_name(taxonomy_name)
       tax.rename(new_name)
       raise "name is \"#{tax.name}\"" unless tax.name == new_name
@@ -157,7 +157,7 @@ class Facade
       raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       tax = Taxonomy.get_by_name(taxonomy_name)
       raise "tag \"#{tag_name}\" not found" unless tax.has_tag?(tag_name)
-      raise "\"#{new_name}\" invalid name - use alphanumeric characters only" unless name_ok?(new_name)
+      raise "name invalid - use alphanumeric and _ characters only" unless name_ok?(new_name)
       tag = tax.get_tag_by_name(tag_name)
       tag.rename(new_name)
       raise "name is \"#{tag.name}\"" unless tag.name == new_name
@@ -283,8 +283,8 @@ class Facade
       raise "\"album not specified" if album_name.empty? || album_name.nil?
       raise "\"taxonomy #{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       tax = Taxonomy.get_by_name(taxonomy_name)
-      raise "\"#{album_name}\" name taken by taxonomy \"#{taxonomy_name}\"" if tax.has_album?(album_name)
-      raise "\"#{album_name}\" invalid name - use alphanumeric characters only" unless name_ok?(album_name)
+      raise "name taken by taxonomy \"#{taxonomy_name}\"" if tax.has_album?(album_name)
+      raise "name invalid - use alphanumeric and _ characters only" unless name_ok?(album_name)
       tax.add_album(album_name)
       raise "album \"#{album_name}\" remains non-existent" unless Album.exists?(album_name)
 #      raise "album \"#{album_name}\" created but not added to taxonomy #{taxonomy_name}" unless tax.has_album?(album_name)
@@ -335,7 +335,7 @@ class Facade
 
   def rename_album(taxonomy_name=nil,album_name,new_name)
     begin
-      raise "\"#{new_name}\" invalid name - use alphanumeric characters only" unless name_ok?(new_name)
+      raise "name invalid - use alphanumeric and _ characters only" unless name_ok?(new_name)
       if taxonomy_name.nil?
         raise "album \"#{album_name}\" not found" unless Album.exists?(album_name)
         albums = Album.get_by_name(album_name)
@@ -428,7 +428,7 @@ class Facade
       raise "album \"#{album_name}\" not found" unless Album.exists?(album_name)
       album = Album.get_by_name(album_name)
       raise "item \"#{item_name}\" not found" unless album.has_item?(item_name)
-      raise "\"#{new_name}\" invalid name - use alphanumeric characters only" unless name_ok?(new_name)
+      raise "name invalid - use alphanumeric and _ characters only" unless name_ok?(new_name)
       item = album.get_item_by_name(item_name)
       item.rename(new_name)
       raise "name is \"#{item.name}\"" unless item.name == new_name

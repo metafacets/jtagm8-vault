@@ -204,13 +204,13 @@ describe Item do
           queried_tags = item.query_tags.map {|tag| tag.name.to_sym}.sort
           it "query_tags = #{test[3]}" do expect(queried_tags).to eq(test[3]) end
         end
-        describe ':get_content and tag renaming' do
+        describe ':get_content and tag renaming with round-tripping' do
           Tagm8Db.wipe
           tax = Taxonomy.new('tax1')
           alm = tax.add_album('alm')
           item = alm.add_item(test[0])
           tag = tax.get_tag_by_name('a')
-#          item_tag = item.tags.select{|tag| tag.name == 'a'}.first
+#          item_tag = item.get_tag_by_id(tag._id)
           item_tag = item.tags.select{|itag| itag._id == tag._id}.first
           unless item_tag.nil?
 #            puts "get_content and tag renaming: item.original_tag_ids.include?(item_tag._id)=#{item.original_tag_ids.include?(item_tag._id)}, item_tag._id=#{item_tag._id}, item.original_tag_ids=#{item.original_tag_ids}"
@@ -222,16 +222,17 @@ describe Item do
             original_tags_include_item_tag = item.original_tag_ids.include?(item_tag._id)
             tag_name = tag.name
             tag_tag_name = tag_tag.name
-            item_tag_name = item_tag.name
+            item_tag_name = item.get_tag_by_id(tag._id).name
             tag.rename('a_renamed1')
             new_content1 = test[2].gsub('a','a_renamed1')
             tag_rename1 = tag.name
-#            tag_tag_rename = tag_tag.name
-#            item_tag_rename = item_tag.name
+            tag_tag_rename1 = Tag.get_by_id(tag._id).name
+#            item_tag_rename1 = item.get_tag_by_id(tag._id).name
             item_get_content1 = item.get_content
             tag.rename('a_renamed2')
             new_content2 = test[2].gsub('a','a_renamed2')
             tag_rename2 = tag.name
+            tag_tag_rename2 = Tag.get_by_id(tag._id).name
             item_get_content2 = item.get_content
             it 'item.get_taxonomy ok' do expect(item_tax_id).to eq(tax_id) end
             it 'item.get_taxonomy.count_tags ok' do expect(item_tax_count_tags).to eq(tax_count_tags) end
@@ -241,10 +242,11 @@ describe Item do
             it 'tag_tag has original name' do expect(tag_tag_name).to eq('a') end
             it 'item_tag has original name' do expect(item_tag_name).to eq('a') end
             it 'tag is renamed' do expect(tag_rename1).to eq('a_renamed1') end
-#            it 'tag_tag is renamed' do expect(tag_tag_rename).to eq('a_renamed1') end
-#            it 'item_tag is renamed' do expect(item_tag_rename).to eq('a_renamed1') end
+            it 'tag_tag is renamed' do expect(tag_tag_rename1).to eq('a_renamed1') end
+#            it 'item_tag is renamed' do expect(item_tag_rename1).to eq('a_renamed1') end
             it 'item content uses renamed tag' do expect(item_get_content1).to eq(new_content1) end
             it 'tag is renamed again' do expect(tag_rename2).to eq('a_renamed2') end
+            it 'tag_tag is renamed again' do expect(tag_tag_rename2).to eq('a_renamed2') end
             it 'item content uses fresh renamed tag' do expect(item_get_content2).to eq(new_content2) end
           end
         end

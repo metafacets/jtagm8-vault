@@ -20,12 +20,15 @@ class Facade
 
   def add_taxonomy(taxonomy_name,dag='prevent')
     begin
-      raise "name taken" if Taxonomy.exists?(taxonomy_name)
-      raise "name invalid - use alphanumeric and _ characters only" unless name_ok?(taxonomy_name)
+      taxonomy_name = 'nil:NilClass' if taxonomy_name.nil?
+      raise 'taxonomy unspecified' if taxonomy_name.empty? || taxonomy_name == 'nil:NilClass'
+      raise "\"#{taxonomy_name}\" taken" if Taxonomy.exists?(taxonomy_name)
+      raise "\"#{taxonomy_name}\" invalid - use alphanumeric and _ characters only" unless name_ok?(taxonomy_name)
       raise "dag \"#{dag}\" invalid - use prevent, fix or free" unless ['prevent','fix','free'].include?(dag)
-      Taxonomy.new(taxonomy_name,dag)
+      tax = Taxonomy.new(taxonomy_name,dag)
       raise "taxonomy \"#{taxonomy_name}\" remains non-existent" unless Taxonomy.exists?(taxonomy_name)
-      [0,"Taxonomy \"#{taxonomy_name}\" added",'']
+      raise 'taxonomy added, but dag not set' unless tax.dag == dag
+      [0,"Taxonomy \"#{taxonomy_name}\" added"]
     rescue => e
       [1,"add_taxonomy \"#{taxonomy_name}\" failed: #{e}"]
     end
@@ -33,14 +36,20 @@ class Facade
 
   def rename_taxonomy(taxonomy_name,new_name)
     begin
-      raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-      raise "name invalid - use alphanumeric and _ characters only" unless name_ok?(new_name)
+      taxonomy_name = 'nil:NilClass' if taxonomy_name.nil?
+      new_name = 'nil:NilClass' if new_name.nil?
+      raise 'taxonomy unspecified' if taxonomy_name.empty? || taxonomy_name == 'nil:NilClass'
+      raise 'taxonomy rename unspecified' if new_name.empty? || new_name == 'nil:NilClass'
+      raise 'rename unchanged' if taxonomy_name == new_name
+      raise "\"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      raise "\"#{new_name}\" taken" if Taxonomy.exists?(new_name)
+      raise "\"#{new_name}\" invalid - use alphanumeric and _ characters only" unless name_ok?(new_name)
       tax = Taxonomy.get_by_name(taxonomy_name)
       tax.rename(new_name)
       raise "name is \"#{tax.name}\"" unless tax.name == new_name
       [0,"Taxonomy \"#{taxonomy_name}\" renamed to \"#{new_name}\""]
     rescue => e
-      [1,"rename_taxonomy \"#{taxonomy_name}\" failed: #{e}"]
+      [1,"rename_taxonomy \"#{taxonomy_name}\" to \"#{new_name}\" failed: #{e}"]
     end
   end
 
@@ -157,7 +166,7 @@ class Facade
       raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       tax = Taxonomy.get_by_name(taxonomy_name)
       raise "tag \"#{tag_name}\" not found" unless tax.has_tag?(tag_name)
-      raise "name invalid - use alphanumeric and _ characters only" unless name_ok?(new_name)
+      raise "\"#{new_name}\" invalid - use alphanumeric and _ characters only" unless name_ok?(new_name)
       tag = tax.get_tag_by_name(tag_name)
       tag.rename(new_name)
       raise "name is \"#{tag.name}\"" unless tag.name == new_name
@@ -279,12 +288,14 @@ class Facade
 
   def add_album(taxonomy_name,album_name)
     begin
-      raise "\"taxonomy not specified" if taxonomy_name.empty? || taxonomy_name.nil?
-      raise "\"album not specified" if album_name.empty? || album_name.nil?
-      raise "\"taxonomy #{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      taxonomy_name = 'nil:NilClass' if taxonomy_name.nil?
+      album_name = 'nil:NilClass' if album_name.nil?
+      raise 'taxonomy unspecified' if taxonomy_name.empty? || taxonomy_name == 'nil:NilClass'
+      raise 'album unspecified' if album_name.empty? || album_name == 'nil:NilClass'
+      raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       tax = Taxonomy.get_by_name(taxonomy_name)
-      raise "name taken by taxonomy \"#{taxonomy_name}\"" if tax.has_album?(album_name)
-      raise "name invalid - use alphanumeric and _ characters only" unless name_ok?(album_name)
+      raise "\"#{album_name}\" taken by taxonomy \"#{taxonomy_name}\"" if tax.has_album?(album_name)
+      raise "\"#{album_name}\" invalid - use alphanumeric and _ characters only" unless name_ok?(album_name)
       tax.add_album(album_name)
       raise "album \"#{album_name}\" remains non-existent" unless Album.exists?(album_name)
 #      raise "album \"#{album_name}\" created but not added to taxonomy #{taxonomy_name}" unless tax.has_album?(album_name)
@@ -296,7 +307,7 @@ class Facade
 
   def delete_albums(taxonomy_name=nil,album_list=[],details=false)
     begin
-      raise "list missing" if album_list.empty?
+      raise 'list missing' if album_list.empty?
       list = album_list.gsub(/\s/,'').split(',')
       if taxonomy_name.nil?
         found = Album.list&list
@@ -305,7 +316,7 @@ class Facade
         tax = Taxonomy.get_by_name(taxonomy_name)
         found = tax.list_albums&list
       end
-      raise "no supplied albums found" if found.empty?
+      raise 'no supplied albums found' if found.empty?
       initial = Album.count
       details_msg = ''
       unless taxonomy_name.nil?
@@ -335,19 +346,27 @@ class Facade
 
   def rename_album(taxonomy_name=nil,album_name,new_name)
     begin
-      raise "name invalid - use alphanumeric and _ characters only" unless name_ok?(new_name)
+      taxonomy_name = 'nil:NilClass' if taxonomy_name.nil?
+      album_name = 'nil:NilClass' if album_name.nil?
+      new_name = 'nil:NilClass' if new_name.nil?
+      raise 'taxonomy unspecified' if taxonomy_name.empty? || taxonomy_name == 'nil:NilClass'
+      raise 'album unspecified' if album_name.empty? || album_name == 'nil:NilClass'
+      raise 'album rename unspecified' if new_name.empty? || new_name == 'nil:NilClass'
+      raise 'album rename unchanged' if album_name == new_name
+      raise "\"#{new_name}\" invalid - use alphanumeric and _ characters only" unless name_ok?(new_name)
       if taxonomy_name.nil?
         raise "album \"#{album_name}\" not found" unless Album.exists?(album_name)
         albums = Album.get_by_name(album_name)
       else
-        raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+        raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
         tax = Taxonomy.get_by_name(taxonomy_name)
         raise "album \"#{album_name}\" not found in taxonomy \"#{taxonomy_name}\"" unless tax.has_album?(album_name)
+        raise "album \"#{new_name}\" taken by taxonomy \"#{taxonomy_name}\"" if tax.has_album?(new_name)
         albums = [tax.get_album_by_name(album_name)]
       end
       supplied = albums.size
       renamed = Album.count_by_name(new_name)
-      albums.each{|album| album.rename(new_name)}
+      albums.each{|album| album.rename(new_name) unless album.taxonomy.has_album?(new_name)}
       renamed = Album.count_by_name(new_name) - renamed
       raise "no albums renamed to \"#{new_name}\"" if renamed == 0
       [0,"#{renamed} of #{supplied} albums renamed from \"#{album_name}\" to \"#{new_name}\""]
@@ -428,7 +447,7 @@ class Facade
       raise "album \"#{album_name}\" not found" unless Album.exists?(album_name)
       album = Album.get_by_name(album_name)
       raise "item \"#{item_name}\" not found" unless album.has_item?(item_name)
-      raise "name invalid - use alphanumeric and _ characters only" unless name_ok?(new_name)
+      raise "\"#{new_name}\" invalid - use alphanumeric and _ characters only" unless name_ok?(new_name)
       item = album.get_item_by_name(item_name)
       item.rename(new_name)
       raise "name is \"#{item.name}\"" unless item.name == new_name

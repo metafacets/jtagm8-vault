@@ -90,8 +90,11 @@ class Item < PItem
     # extracts @name and @original_content
     first, *rest = entry.split("\n")
     Debug.show(class:self.class,method:__method__,note:'1',vars:[['first',first],['rest',rest]])
-    self.name = first if first
-    Debug.show(class:self.class,method:__method__,note:'2',vars:[['name',name],['rest',rest]])
+    if first
+      self.name = first
+      self.original_name = first if self.original_name.nil?
+      Debug.show(class:self.class,method:__method__,note:'2',vars:[['name',name],['rest',rest]])
+    end
     if rest
       self.original_content = rest.join("\n")
       Debug.show(class:self.class,method:__method__,note:'2',vars:[['original_content',original_content]])

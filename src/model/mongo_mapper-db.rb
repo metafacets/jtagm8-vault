@@ -272,8 +272,8 @@ class PAlbum
   end
 
   # to be used by Facade.list|rename|delete_albums
-  def self.get_by_name(name)
-    PAlbum.where(name:name.to_s).all
+  def self.get_by_name(name=nil)
+    name.nil? ? PAlbum.all : PAlbum.where(name:name.to_s).all
   end
 
   def self.list
@@ -303,6 +303,7 @@ class PItem
   # PTag <<->> PItem  - ODM
   include MongoMapper::Document
   key :name, String
+  key :original_name, String
   key :date, String
   key :original_content, String
   key :logical_content, String

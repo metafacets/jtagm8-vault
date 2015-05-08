@@ -456,23 +456,24 @@ class Facade
     end
   end
 
-  def add_item(taxonomy_name=nil, album_name,item)
+  def add_item(taxonomy_name=nil,album_name=nil,item)
     begin
-      album_name = 'nil:NilClass' if album_name.nil?
       item = 'nil:NilClass' if item.nil?
-      raise 'album unspecified' if album_name.empty? || album_name == 'nil:NilClass'
+      raise 'album unspecified' if !album_name.nil? && album_name.empty?
       raise 'item unspecified' if item.empty? || item == 'nil:NilClass'
       if taxonomy_name.nil?
         raise "album \"#{album_name}\" not found" unless Album.exists?(album_name)
         albums = Album.get_by_name(album_name)
         msg = "items added to #{albums.size} \"#{album_name}\"_albums"
+        msg.gsub!('""_','')
       else
         raise 'taxonomy unspecified' if taxonomy_name.empty?
         raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
         tax = Taxonomy.get_by_name(taxonomy_name)
         raise "album \"#{album_name}\" not found in taxonomy \"#{taxonomy_name}\"" unless tax.has_album?(album_name)
-        albums = [tax.get_album_by_name(album_name)]
+        album_name.nil? ? albums = tax.albums : albums = [tax.get_album_by_name(album_name)]
         msg = "items added to album \"#{album_name}\" in taxonomy \"#{taxonomy_name}\""
+        msg.gsub!('album ""',"#{albums.size} albums")
       end
       items_added = Item.count
       albums.each{|album| album.add_item(item)}
@@ -480,7 +481,7 @@ class Facade
       raise 'No items were added' if items_added == 0
       [0,grammar("#{items_added} #{msg}")]
     rescue => e
-      [1,"add_item to album \"#{album_name} failed: #{e}"]
+      [1,"add_item to album \"#{album_name}\" failed: #{e}"]
     end
   end
 

@@ -312,7 +312,7 @@ describe :rename_album do
     result_msg  = result[1]
     result_data = result[2]
     it "result_code" do expect(result_code).to eq(0) end
-    it "result message" do expect(result_msg).to eq('1 of 1 albums renamed from "alm1" to "alm2"') end
+    it "result message" do expect(result_msg).to eq('Album renamed from "alm1" to "alm2" in taxonomy "tax1"') end
     it "result data" do expect(result_data).to be_nil end
   end
   describe 'taxonomy unspecified' do
@@ -325,48 +325,20 @@ describe :rename_album do
     result_msg  = result[1]
     result_data = result[2]
     it "result_code" do expect(result_code).to eq(1) end
-    it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm2" failed: taxonomy unspecified') end
+    it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm2" in taxonomy "" failed: taxonomy unspecified') end
     it "result data" do expect(result_data).to be_nil end
   end
-  describe 'taxonomy nil album in 1 taxonomy' do
+  describe 'taxonomy nil' do
     Tagm8Db.wipe
     face = Facade.instance
     face.add_taxonomy('tax1')
     face.add_album('tax1','alm1')
-    result = face.rename_album('alm1','alm2')
-    result_code = result[0]
-    result_msg  = result[1]
-    result_data = result[2]
-    it "result_code" do expect(result_code).to eq(0) end
-    it "result message" do expect(result_msg).to eq('1 of 1 albums renamed from "alm1" to "alm2"') end
-    it "result data" do expect(result_data).to be_nil end
-  end
-  describe 'taxonomy nil album in 2 taxonomies' do
-    Tagm8Db.wipe
-    face = Facade.instance
-    face.add_taxonomy('tax1')
-    face.add_album('tax1','alm1')
-    face.add_taxonomy('tax2')
-    face.add_album('tax2','alm1')
-    result = face.rename_album('alm1','alm2')
-    result_code = result[0]
-    result_msg  = result[1]
-    result_data = result[2]
-    it "result_code" do expect(result_code).to eq(0) end
-    it "result message" do expect(result_msg).to eq('2 of 2 albums renamed from "alm1" to "alm2"') end
-    it "result data" do expect(result_data).to be_nil end
-  end
-  describe 'taxonomy nil album not found' do
-    Tagm8Db.wipe
-    face = Facade.instance
-    face.add_taxonomy('tax1')
-    face.add_album('tax1','alm')
-    result = face.rename_album('alm1','alm2')
+    result = face.rename_album(nil,'alm1','alm2')
     result_code = result[0]
     result_msg  = result[1]
     result_data = result[2]
     it "result_code" do expect(result_code).to eq(1) end
-    it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm2" failed: album "alm1" not found') end
+    it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm2" in taxonomy "nil:NilClass" failed: taxonomy unspecified') end
     it "result data" do expect(result_data).to be_nil end
   end
   describe 'taxonomy not found' do
@@ -379,7 +351,7 @@ describe :rename_album do
     result_msg  = result[1]
     result_data = result[2]
     it "result_code" do expect(result_code).to eq(1) end
-    it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm2" failed: taxonomy "tax2" not found') end
+    it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm2" in taxonomy "tax2" failed: taxonomy "tax2" not found') end
     it "result data" do expect(result_data).to be_nil end
   end
   describe 'album unspecified' do
@@ -392,7 +364,7 @@ describe :rename_album do
     result_msg  = result[1]
     result_data = result[2]
     it "result_code" do expect(result_code).to eq(1) end
-    it "result message" do expect(result_msg).to eq('rename_album "" to "alm2" failed: album unspecified') end
+    it "result message" do expect(result_msg).to eq('rename_album "" to "alm2" in taxonomy "tax1" failed: album unspecified') end
     it "result data" do expect(result_data).to be_nil end
   end
   describe 'album nil' do
@@ -405,7 +377,7 @@ describe :rename_album do
     result_msg  = result[1]
     result_data = result[2]
     it "result_code" do expect(result_code).to eq(1) end
-    it "result message" do expect(result_msg).to eq('rename_album "nil:NilClass" to "alm2" failed: album unspecified') end
+    it "result message" do expect(result_msg).to eq('rename_album "nil:NilClass" to "alm2" in taxonomy "tax1" failed: album unspecified') end
     it "result data" do expect(result_data).to be_nil end
   end
   describe 'album not found' do
@@ -418,7 +390,7 @@ describe :rename_album do
     result_msg  = result[1]
     result_data = result[2]
     it "result_code" do expect(result_code).to eq(1) end
-    it "result message" do expect(result_msg).to eq('rename_album "alm2" to "alm3" failed: album "alm2" not found in taxonomy "tax1"') end
+    it "result message" do expect(result_msg).to eq('rename_album "alm2" to "alm3" in taxonomy "tax1" failed: album "alm2" not found in taxonomy "tax1"') end
     it "result data" do expect(result_data).to be_nil end
   end
   describe 'rename unspecified' do
@@ -431,7 +403,7 @@ describe :rename_album do
     result_msg  = result[1]
     result_data = result[2]
     it "result_code" do expect(result_code).to eq(1) end
-    it "result message" do expect(result_msg).to eq('rename_album "alm1" to "" failed: album rename unspecified') end
+    it "result message" do expect(result_msg).to eq('rename_album "alm1" to "" in taxonomy "tax1" failed: album rename unspecified') end
     it "result data" do expect(result_data).to be_nil end
   end
   describe 'rename nil' do
@@ -444,7 +416,7 @@ describe :rename_album do
     result_msg  = result[1]
     result_data = result[2]
     it "result_code" do expect(result_code).to eq(1) end
-    it "result message" do expect(result_msg).to eq('rename_album "alm1" to "nil:NilClass" failed: album rename unspecified') end
+    it "result message" do expect(result_msg).to eq('rename_album "alm1" to "nil:NilClass" in taxonomy "tax1" failed: album rename unspecified') end
     it "result data" do expect(result_data).to be_nil end
   end
   describe 'rename unchanged' do
@@ -457,7 +429,7 @@ describe :rename_album do
     result_msg  = result[1]
     result_data = result[2]
     it "result_code" do expect(result_code).to eq(1) end
-    it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm1" failed: album rename unchanged') end
+    it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm1" in taxonomy "tax1" failed: album rename unchanged') end
     it "result data" do expect(result_data).to be_nil end
   end
   describe 'rename taken' do
@@ -471,7 +443,7 @@ describe :rename_album do
     result_msg  = result[1]
     result_data = result[2]
     it "result_code" do expect(result_code).to eq(1) end
-    it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm2" failed: album "alm2" taken by taxonomy "tax1"') end
+    it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm2" in taxonomy "tax1" failed: album "alm2" taken by taxonomy "tax1"') end
     it "result data" do expect(result_data).to be_nil end
   end
   describe 'rename invalid' do
@@ -484,7 +456,7 @@ describe :rename_album do
     result_msg  = result[1]
     result_data = result[2]
     it "result_code" do expect(result_code).to eq(1) end
-    it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm%" failed: album "alm%" invalid - use alphanumeric and _ characters only') end
+    it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm%" in taxonomy "tax1" failed: album "alm%" invalid - use alphanumeric and _ characters only') end
     it "result data" do expect(result_data).to be_nil end
   end
 end

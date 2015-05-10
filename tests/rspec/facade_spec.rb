@@ -94,6 +94,95 @@ describe :add_taxonomy do
     it "result data" do expect(result_data).to be_nil end
   end
 end
+describe :delete_taxonomies do
+  describe '1 of 1 found and deleted' do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    result = face.delete_taxonomies('tax1')
+    result_code = result[0]
+    result_msg  = result[1]
+    result_data = result[2]
+    it "result_code" do expect(result_code).to eq(0) end
+    it "result message" do expect(result_msg).to eq('1 of 1 taxonomies "tax1" found and deleted') end
+    it "result data" do expect(result_data).to be_nil end
+  end
+  describe '2 of 2 found and deleted' do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_taxonomy('tax2')
+    result = face.delete_taxonomies('tax1,tax2')
+    result_code = result[0]
+    result_msg  = result[1]
+    result_data = result[2]
+    it "result_code" do expect(result_code).to eq(0) end
+    it "result message" do expect(result_msg).to eq('2 of 2 taxonomies "tax1,tax2" found and deleted') end
+    it "result data" do expect(result_data).to be_nil end
+  end
+  describe '1 of 2 found and deleted' do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_taxonomy('tax2')
+    result = face.delete_taxonomies('tax1,tax3')
+    result_code = result[0]
+    result_msg  = result[1]
+    result_data = result[2]
+    it "result_code" do expect(result_code).to eq(0) end
+    it "result message" do expect(result_msg).to eq('1 of 2 taxonomies "tax1,tax3" found and deleted') end
+    it "result data" do expect(result_data).to be_nil end
+  end
+  describe '2 of 3 found and deleted with details' do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_taxonomy('tax2')
+    face.add_taxonomy('tax3')
+    result = face.delete_taxonomies('tax1,tax2,tax4',true)
+    result_code = result[0]
+    result_msg  = result[1]
+    result_data = result[2]
+    it "result_code" do expect(result_code).to eq(0) end
+    it "result message" do expect(result_msg).to eq("taxonomy \"tax1\" deleted\ntaxonomy \"tax2\" deleted\n2 of 3 taxonomies \"tax1,tax2,tax4\" found and deleted") end
+    it "result data" do expect(result_data).to be_nil end
+  end
+  describe 'none found' do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_taxonomy('tax2')
+    result = face.delete_taxonomies('tax3,tax4')
+    result_code = result[0]
+    result_msg  = result[1]
+    result_data = result[2]
+    it "result_code" do expect(result_code).to eq(1) end
+    it "result message" do expect(result_msg).to eq('delete_taxonomies "tax3,tax4" failed: no listed taxonomies found') end
+    it "result data" do expect(result_data).to be_nil end
+  end
+  describe 'taxonomy list missing - empty' do
+    Tagm8Db.wipe
+    face = Facade.instance
+    result = face.delete_taxonomies('')
+    result_code = result[0]
+    result_msg  = result[1]
+    result_data = result[2]
+    it "result_code" do expect(result_code).to eq(1) end
+    it "result message" do expect(result_msg).to eq('delete_taxonomies "" failed: taxonomy list missing') end
+    it "result data" do expect(result_data).to be_nil end
+  end
+  describe 'taxonomy list missing - nil' do
+    Tagm8Db.wipe
+    face = Facade.instance
+    result = face.delete_taxonomies(nil)
+    result_code = result[0]
+    result_msg  = result[1]
+    result_data = result[2]
+    it "result_code" do expect(result_code).to eq(1) end
+    it "result message" do expect(result_msg).to eq('delete_taxonomies "nil:NilClass" failed: taxonomy list missing') end
+    it "result data" do expect(result_data).to be_nil end
+  end
+end
 describe :rename_taxonomy do
   describe 'rename valid' do
     Tagm8Db.wipe

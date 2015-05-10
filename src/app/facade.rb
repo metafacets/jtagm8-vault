@@ -34,6 +34,29 @@ class Facade
     end
   end
 
+  def delete_taxonomies(taxonomy_list,details=false)
+    begin
+      taxonomy_list = 'nil:NilClass' if taxonomy_list.nil?
+      raise 'taxonomy list missing' if taxonomy_list.empty? || taxonomy_list == 'nil:NilClass'
+      list = taxonomy_list.gsub(/\s/,'').split(',')
+      found = list&Taxonomy.list
+      raise 'no listed taxonomies found' if found.empty?
+      Taxonomy.delete_taxonomies(found)
+      deleted = found-Taxonomy.list
+      details_msg = ''
+      unless deleted.empty?
+        deleted.each{|name| details_msg += "taxonomy \"#{name}\" deleted\n"} if details
+        found.size == deleted.size ? d_insert = ' and' : d_insert = ", #{deleted}"
+      else
+        d_insert = ' but none'
+      end
+      msg = grammar("#{found.size} of #{list.size} taxonomies \"#{taxonomy_list}\" found#{d_insert} deleted")
+      [0,"#{details_msg}#{msg}"]
+    rescue => e
+      [1,"delete_taxonomies \"#{taxonomy_list}\" failed: #{e}"]
+    end
+  end
+
   def rename_taxonomy(taxonomy_name,new_name)
     begin
       taxonomy_name = 'nil:NilClass' if taxonomy_name.nil?
@@ -50,26 +73,6 @@ class Facade
       [0,"Taxonomy \"#{taxonomy_name}\" renamed to \"#{new_name}\""]
     rescue => e
       [1,"rename_taxonomy \"#{taxonomy_name}\" to \"#{new_name}\" failed: #{e}"]
-    end
-  end
-
-  def delete_taxonomies(list,details=false)
-    begin
-      raise "list missing" if list.empty?
-      list = list.gsub(/\s/,'').split(',')
-      found = list.map{|name| name if Taxonomy.exist?(name)}
-      initial = Taxonomy.list
-      Taxonomy.delete_taxonomies(found)
-      deleted = initial-Taxonomy.list
-      raise "No taxonomies deleted" if deleted.empty?
-      msg = ''
-      deleted.each{|name| msg += "Taxonomy \"#{name}\" deleted\n"} if details
-      remaining = (Taxonomy.list & found).map{|name| "\"#{name}\""}
-      remaining.empty? ? remaining_insert = '' : remaining_insert = ", #{remaining.join(', ')} not deleted"
-      found.size == deleted.size ? insert = ' and' : insert = ", #{deleted.size}"
-      [0,"#{msg}#{found.size} of #{list.size} supplied taxonomies found#{insert} deleted#{remaining_insert}"]
-    rescue => e
-      [1,"delete_taxonomies failed: #{e}"]
     end
   end
 
@@ -305,42 +308,30 @@ class Facade
     end
   end
 
-  def delete_albums(taxonomy_name=nil,album_list=[],details=false)
+  def delete_albums(taxonomy_name,album_list,details=false)
     begin
-      raise 'list missing' if album_list.empty?
+      taxonomy_name = 'nil:NilClass' if taxonomy_name.nil?
+      raise 'taxonomy unspecified' if taxonomy_name.empty? || taxonomy_name == 'nil:NilClass'
+      album_list = 'nil:NilClass' if album_list.nil?
+      raise 'album list missing' if album_list.empty? || album_list == 'nil:NilClass'
       list = album_list.gsub(/\s/,'').split(',')
-      if taxonomy_name.nil?
-        found = Album.list&list
-      else
-        raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-        tax = Taxonomy.get_by_name(taxonomy_name)
-        found = tax.list_albums&list
-      end
-      raise 'no supplied albums found' if found.empty?
-      initial = Album.count
+      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      tax = Taxonomy.get_by_name(taxonomy_name)
+      found = tax.list_albums&list
+      raise 'no listed albums found' if found.empty?
+      tax.delete_albums(found)
+      deleted = found-tax.list_albums
       details_msg = ''
-      unless taxonomy_name.nil?
-        tax.delete_albums(found)
-        tax_names = found.map{|name| "\"#{name}\""}.join(', ')
-        found.size == 1 ? d_insert = '' : d_insert = 's'
-        details_msg += "deleting album#{d_insert} #{tax_names} from taxonomy \"#{taxonomy_name}\"\n" if details
+      unless deleted.empty?
+        deleted.each{|name| details_msg += "album \"#{name}\" deleted\n"} if details
+        found.size == deleted.size ? d_insert = ' and' : d_insert = ", #{deleted}"
       else
-        found.each do |name|
-          taxonomies = Album.get_by_name(name).map{|album| album.taxonomy}
-          taxonomies.each{|tax| tax.delete_albums([name])}
-          if details
-            details_msg += "deleting album \"#{name}\"";
-            tax_names = taxonomies.map{|tax| "\"#{tax.name}\""}.join(', ')
-            taxonomies.size == 1 ? details_msg += " from taxonomy #{tax_names}\n" : details_msg += " from taxonomies #{tax_names}\n"
-          end
-        end
+        d_insert = ' but none'
       end
-      deleted = initial-Album.count
-      found.size == deleted ? d_insert = ' and' : d_insert = ", #{deleted}"
-      msg = grammar("#{found.size} of #{list.size} supplied album_names found#{d_insert} deleted")
+      msg = grammar("#{found.size} of #{list.size} albums \"#{album_list}\" found#{d_insert} deleted from taxonomy \"#{taxonomy_name}\"")
       [0,"#{details_msg}#{msg}"]
     rescue => e
-      [1,"delete_albums failed: #{e}"]
+      [1,"delete_albums \"#{album_list}\" from taxonomy \"#{taxonomy_name}\" failed: #{e}"]
     end
   end
 
@@ -454,6 +445,37 @@ class Facade
       [0,"Item \"#{item.name}\" added to album \"#{album_name}\" in taxonomy \"#{taxonomy_name}\""]
     rescue => e
       [1,"add_item to album \"#{album_name}\" in taxonomy \"#{taxonomy_name}\" failed: #{e}"]
+    end
+  end
+
+  def delete_items(taxonomy_name,album_name,item_list,details=false)
+    begin
+      taxonomy_name = 'nil:NilClass' if taxonomy_name.nil?
+      raise 'taxonomy unspecified' if taxonomy_name.empty? || taxonomy_name == 'nil:NilClass'
+      album_name = 'nil:NilClass' if album_name.nil?
+      raise 'album unspecified' if album_name.empty? || album_name == 'nil:NilClass'
+      item_list = 'nil:NilClass' if item_list.nil?
+      raise 'item list missing' if item_list.empty? || item_list == 'nil:NilClass'
+      list = item_list.gsub(/\s/,'').split(',')
+      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      tax = Taxonomy.get_by_name(taxonomy_name)
+      raise "album \"#{album_name}\" not found in taxonomy \"#{taxonomy_name}\"" unless tax.has_album?(album_name)
+      album = tax.get_album_by_name(album_name)
+      found = album.list_items&list
+      raise 'no listed items found' if found.empty?
+      album.delete_items(found)
+      deleted = found-album.list_items
+      details_msg = ''
+      unless deleted.empty?
+        deleted.each{|name| details_msg += "item \"#{name}\" deleted\n"} if details
+        found.size == deleted.size ? d_insert = ' and' : d_insert = ", #{deleted}"
+      else
+        d_insert = ' but none'
+      end
+      msg = grammar("#{found.size} of #{list.size} items \"#{item_list}\" found#{d_insert} deleted from album \"#{album_name}\" of taxonomy \"#{taxonomy_name}\"")
+      [0,"#{details_msg}#{msg}"]
+    rescue => e
+      [1,"delete_items \"#{item_list}\" from album \"#{album_name}\" of taxonomy \"#{taxonomy_name}\" failed: #{e}"]
     end
   end
 

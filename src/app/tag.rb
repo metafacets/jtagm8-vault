@@ -21,7 +21,7 @@ class Taxonomy < PTaxonomy
     tax
   end
 
-  def self.delete_taxonimies(list)
+  def self.delete_taxonomies(list)
     list.each{|name| self.get_by_name(name).delete}
   end
 

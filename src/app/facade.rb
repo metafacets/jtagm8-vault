@@ -315,11 +315,12 @@ class Facade
       album_list = 'nil:NilClass' if album_list.nil?
       raise 'album list missing' if album_list.empty? || album_list == 'nil:NilClass'
       list = album_list.gsub(/\s/,'').split(',')
-      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       tax = Taxonomy.get_by_name(taxonomy_name)
       found = tax.list_albums&list
       raise 'no listed albums found' if found.empty?
       tax.delete_albums(found)
+      tax = Taxonomy.get_by_name(taxonomy_name) # refresh tax after delete_albums
       deleted = found-tax.list_albums
       details_msg = ''
       unless deleted.empty?

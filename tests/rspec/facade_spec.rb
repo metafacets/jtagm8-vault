@@ -390,6 +390,141 @@ describe :add_album do
     it "result data" do expect(result_data).to be_nil end
   end
 end
+describe :delete_albums do
+  describe '1 of 1 found and deleted' do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_album('tax1','alm1')
+    result = face.delete_albums('tax1','alm1')
+    result_code = result[0]
+    result_msg  = result[1]
+    result_data = result[2]
+    it "result_code" do expect(result_code).to eq(0) end
+    it "result message" do expect(result_msg).to eq('1 of 1 albums "alm1" found and deleted from taxonomy "tax1"') end
+    it "result data" do expect(result_data).to be_nil end
+  end
+  describe '2 of 2 found and deleted' do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_album('tax1','alm1')
+    face.add_album('tax1','alm2')
+    result = face.delete_albums('tax1','alm1,alm2')
+    result_code = result[0]
+    result_msg  = result[1]
+    result_data = result[2]
+    it "result_code" do expect(result_code).to eq(0) end
+    it "result message" do expect(result_msg).to eq('2 of 2 albums "alm1,alm2" found and deleted from taxonomy "tax1"') end
+    it "result data" do expect(result_data).to be_nil end
+  end
+  describe '1 of 2 found and deleted' do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_album('tax1','alm1')
+    face.add_album('tax1','alm2')
+    result = face.delete_albums('tax1','alm1,alm3')
+    result_code = result[0]
+    result_msg  = result[1]
+    result_data = result[2]
+    it "result_code" do expect(result_code).to eq(0) end
+    it "result message" do expect(result_msg).to eq('1 of 2 albums "alm1,alm3" found and deleted from taxonomy "tax1"') end
+    it "result data" do expect(result_data).to be_nil end
+  end
+  describe '2 of 3 found and deleted with details' do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_album('tax1','alm1')
+    face.add_album('tax1','alm2')
+    face.add_album('tax1','alm3')
+    result = face.delete_albums('tax1','alm1,alm2,alm4',true)
+    result_code = result[0]
+    result_msg  = result[1]
+    result_data = result[2]
+    it "result_code" do expect(result_code).to eq(0) end
+    it "result message" do expect(result_msg).to eq("album \"alm1\" deleted\nalbum \"alm2\" deleted\n2 of 3 albums \"alm1,alm2,alm4\" found and deleted from taxonomy \"tax1\"") end
+    it "result data" do expect(result_data).to be_nil end
+  end
+  describe 'taxonomy unspecified' do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_album('tax1','alm1')
+    result = face.delete_albums('','alm1')
+    result_code = result[0]
+    result_msg  = result[1]
+    result_data = result[2]
+    it "result_code" do expect(result_code).to eq(1) end
+    it "result message" do expect(result_msg).to eq('delete_albums "alm1" from taxonomy "" failed: taxonomy unspecified') end
+    it "result data" do expect(result_data).to be_nil end
+  end
+  describe 'taxonomy nil' do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_album('tax1','alm1')
+    result = face.delete_albums(nil,'alm1')
+    result_code = result[0]
+    result_msg  = result[1]
+    result_data = result[2]
+    it "result_code" do expect(result_code).to eq(1) end
+    it "result message" do expect(result_msg).to eq('delete_albums "alm1" from taxonomy "nil:NilClass" failed: taxonomy unspecified') end
+    it "result data" do expect(result_data).to be_nil end
+  end
+  describe 'taxonomy not found' do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_album('tax1','alm1')
+    result = face.delete_albums('tax2','alm1')
+    result_code = result[0]
+    result_msg  = result[1]
+    result_data = result[2]
+    it "result_code" do expect(result_code).to eq(1) end
+    it "result message" do expect(result_msg).to eq('delete_albums "alm1" from taxonomy "tax2" failed: taxonomy "tax2" not found') end
+    it "result data" do expect(result_data).to be_nil end
+  end
+  describe 'none found' do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_album('tax1','alm1')
+    face.add_album('tax1','alm2')
+    result = face.delete_albums('tax1','alm3,alm4')
+    result_code = result[0]
+    result_msg  = result[1]
+    result_data = result[2]
+    it "result_code" do expect(result_code).to eq(1) end
+    it "result message" do expect(result_msg).to eq('delete_albums "alm3,alm4" from taxonomy "tax1" failed: no listed albums found') end
+    it "result data" do expect(result_data).to be_nil end
+  end
+  describe 'album list missing - empty' do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    result = face.delete_albums('tax1','')
+    result_code = result[0]
+    result_msg  = result[1]
+    result_data = result[2]
+    it "result_code" do expect(result_code).to eq(1) end
+    it "result message" do expect(result_msg).to eq('delete_albums "" from taxonomy "tax1" failed: album list missing') end
+    it "result data" do expect(result_data).to be_nil end
+  end
+  describe 'album list missing - nil' do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    result = face.delete_albums('tax1',nil)
+    result_code = result[0]
+    result_msg  = result[1]
+    result_data = result[2]
+    it "result_code" do expect(result_code).to eq(1) end
+    it "result message" do expect(result_msg).to eq('delete_albums "nil:NilClass" from taxonomy "tax1" failed: album list missing') end
+    it "result data" do expect(result_data).to be_nil end
+  end
+end
 describe :rename_album do
   describe 'rename valid' do
     Tagm8Db.wipe

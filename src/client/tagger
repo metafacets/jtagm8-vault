@@ -1,0 +1,388 @@
+#!/usr/bin/env ruby
+require 'gli'
+begin # XXX: Remove this begin/rescue before distributing your app
+require 'tagger'
+require 'drb'
+rescue LoadError
+  STDERR.puts "In development, you need to use `bundle exec bin/tagger` to run your app"
+  STDERR.puts "At install-time, RubyGems will make sure lib, etc. are in the load path"
+  STDERR.puts "Feel free to remove this message from bin/tagger now"
+  exit 64
+end
+
+DRb.start_service
+facade = DRbObject.new_with_uri('druby://127.0.0.1:61665')
+
+include GLI::App
+
+program_desc 'Describe your application here'
+
+version Tagger::VERSION
+
+subcommand_option_handling :normal
+arguments :strict
+
+# desc 'Describe some switch here'
+# switch [:s,:switch]
+
+# desc 'Describe some flag here'
+# default_value 'the default'
+# arg_name 'The name of the argument'
+# flag [:f,:flagname]
+
+def show(res)
+  #puts "res=#{res}"
+  #res = res.to_a
+  #puts res
+  res.to_a.map!{|l| l.to_s}
+  code = res.shift
+  msg = res.shift
+  res.map!{|r| r unless r.empty?}
+  puts res unless res.empty?
+  puts unless res.empty? || msg.empty?
+  puts msg unless msg.empty?
+end
+
+desc 'Add a new Taxonomy'
+long_desc 'Add a new Taxonomy to manage a collection of tags and albums containing your tagged notes'
+# arg_name 'taxonomy-name'
+command :add_taxonomy do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', default_value:'my taxonomy'
+  c.flag [:d,:dag], desc:'dag support', default_value:'prevent'
+  c.action do |_,options,_|
+    show(facade.add_taxonomy(options[:taxonomy],options[:dag]))
+  end
+end
+
+desc 'query dag setting'
+long_desc 'Query Taxonomy Directed Acyclic Graph Support'
+command :dag? do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.action do |_,options,_|
+    show(facade.dag?(options[:taxonomy]))
+  end
+end
+
+desc 'set dag to prevent'
+long_desc 'Set Directed Acyclic Graph Support to "prevent"'
+command :dag_prevent do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.action do |_,options,_|
+    show(facade.dag_set(options[:taxonomy],'prevent'))
+  end
+end
+
+desc 'set dag to fix'
+long_desc 'Set Directed Acyclic Graph Support to "fix"'
+command :dag_fix do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.action do |_,options,_|
+    show(facade.dag_set(options[:taxonomy],'fix'))
+  end
+end
+
+desc 'disable dag support'
+long_desc 'Disable Directed Acyclic Graph Support by setting it to "false"'
+command :dag_false do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.action do |_,options,_|
+    show(facade.dag_set(options[:taxonomy],'false'))
+  end
+end
+
+desc 'List Taxonomies'
+long_desc 'List Taxonomies within the current database'
+# arg_name 'taxonomy-name'
+command :list_taxonomies do |c|
+  c.switch [:r,:reverse], desc:'reverse sort alphabetically'
+  c.switch [:d,:details], desc:'list details'
+  c.action do |_,options,_|
+    show(facade.list_taxonomies(options[:reverse],options[:details]))
+  end
+end
+
+desc 'Count Taxonomies'
+long_desc 'Count Taxonomies within the current database'
+# arg_name 'taxonomy-name'
+command :count_taxonomies do |c|
+  c.action do |global_options,options,args|
+    show(facade.count_taxonomies)
+  end
+end
+
+desc 'Delete Taxonomies'
+long_desc 'Delete Taxonomies from the current database'
+# arg_name 'taxonomy-name'
+command :delete_taxonomies do |c|
+  c.flag [:l,:list], desc:'taxonomy list', required:true
+  c.switch [:d,:details], desc:'detailed output'
+  c.action do |_,options,_|
+    show(facade.delete_taxonomies(options[:list],options[:details]))
+  end
+end
+
+desc 'Add tags to a taxonomy'
+#arg_name 'Describe arguments to create here'
+command :add_tags do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.flag [:s,:syntax], desc:'tag syntax', required:true
+  c.switch [:d,:details], desc:'detailed output'
+  c.action do |_,options,_|
+    show(facade.add_tags(options[:taxonomy],options[:syntax],options[:details]))
+  end
+end
+
+desc 'List tags within a taxonomy'
+#arg_name 'Describe arguments to create here'
+command :list_tags do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.switch [:r,:reverse], desc:'reverse sort alphabetically'
+  c.switch [:h,:hierarchy], desc:'show hierarchy'
+  c.action do |_,options,_|
+    show(facade.list_tags(options[:taxonomy],options[:reverse],options[:hierarchy]))
+  end
+end
+
+desc 'Count tags within a taxonomy'
+#arg_name 'Describe arguments to create here'
+command :count_tags do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.action do |_,options,_|
+    show(facade.count_tags(options[:taxonomy]))
+  end
+end
+
+desc 'Count links within a taxonomy'
+#arg_name 'Describe arguments to create here'
+command :count_links do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.action do |_,options,_|
+    show(facade.count_links(options[:taxonomy]))
+  end
+end
+
+desc 'Count roots within a taxonomy'
+#arg_name 'Describe arguments to create here'
+command :count_roots do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.action do |_,options,_|
+    show(facade.count_roots(options[:taxonomy]))
+  end
+end
+
+desc 'Count folksonomies within a taxonomy'
+#arg_name 'Describe arguments to create here'
+command :count_folksonomies do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.action do |_,options,_|
+    show(facade.count_folksonomies(options[:taxonomy]))
+  end
+end
+
+desc 'Delete tags within a taxonomy'
+long_desc 'Delete a list of tags or branches within a taxonomy optionally reporting details'
+#arg_name 'Describe arguments to create here'
+command :delete_tags do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name'
+  c.flag [:l,:list], desc:'list of tags to be deleted', required:true
+  c.switch [:b,:branch], desc:'delete branch'
+  c.switch [:d,:details], desc:'detailed output'
+  c.action do |_,options,_|
+    show(facade.delete_tags(options[:taxonomy],options[:list],options[:branch],options[:details]))
+  end
+end
+
+desc 'List ancestors of tags within a taxonomy'
+long_desc 'List common ancestors to a list of tags within a taxonomy'
+#arg_name 'Describe arguments to create here'
+command :list_ancestors do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.flag [:l,:list], desc:'tag list', required:true
+  c.switch [:r,:reverse], desc:'reverse sort alphabetically'
+  c.action do |_,options,_|
+    show(facade.list_genealogy('ancestors',options[:taxonomy],options[:list],options[:reverse]))
+  end
+end
+
+desc 'List descendents of tags within a taxonomy'
+long_desc 'List common descendents to a list of tags within a taxonomy'
+#arg_name 'Describe arguments to create here'
+command :list_descendents do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.flag [:l,:list], desc:'tag list', required:true
+  c.switch [:r,:reverse], desc:'reverse sort alphabetically'
+  c.action do |_,options,_|
+    show(facade.list_genealogy('descendents',options[:taxonomy],options[:list],options[:reverse]))
+  end
+end
+
+desc 'Rename taxonomy'
+long_desc 'Rename a taxonomy from current-name to new-name'
+#arg_name 'Describe arguments to create here'
+command :rename_taxonomy do |c|
+  c.flag [:c,:t,:current,:taxonomy], desc:'current taxonomy name', required:true
+  c.flag [:n,:new], desc:'new taxonomy name', required:true
+  c.action do |_,options,_|
+    show(facade.rename_taxonomy(options[:current],options[:new]))
+  end
+end
+
+desc 'Rename tag'
+long_desc 'Rename a tag  within a taxonomy from current-name to new-name'
+#arg_name 'Describe arguments to create here'
+command :rename_tag do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.flag [:c,:current,:tag], desc:'current tag name', required:true
+  c.flag [:n,:new], desc:'new taxonomy name', required:true
+  c.action do |_,options,_|
+    show(facade.rename_tag(options[:taxonomy],options[:current],options[:new]))
+  end
+end
+
+desc 'Rename album'
+long_desc 'Rename an album optionally  within a taxonomy from current-name to new-name'
+#arg_name 'Describe arguments to create here'
+command :rename_album do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.flag [:c,:a,:album,:current], desc:'current album name', required:true
+  c.flag [:n,:new], desc:'new album name', required:true
+  c.action do |_,options,_|
+    show(facade.rename_album(options[:taxonomy],options[:current],options[:new]))
+  end
+end
+
+desc 'Add album to a taxonomy'
+long_desc 'Add a new album to an existing taxonomy - taxonomies cannot share albums'
+#arg_name 'Describe arguments to create here'
+command :add_album do |c|
+  c.flag [:a,:album], desc:'album name', required:true
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.action do |_,options,_|
+    show(facade.add_album(options[:taxonomy],options[:album]))
+  end
+end
+
+desc 'Delete albums'
+long_desc 'Deletes a list of albums including their items and tag usages optionally reporting details'
+#arg_name 'Describe arguments to create here'
+command :delete_albums do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.flag [:l,:list], desc:'list of albums to be deleted', required:true
+  c.switch [:d,:details], desc:'detailed output'
+  c.action do |_,options,_|
+    show(facade.delete_albums(options[:taxonomy],options[:list],options[:details]))
+  end
+end
+
+desc 'List albums'
+long_desc 'Lists albums optionally within a taxonomy or by name and with details'
+#arg_name 'Describe arguments to create here'
+command :list_albums do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name'
+  c.flag [:a,:album], desc:'album name'
+  c.switch [:d,:details], desc:'detailed output'
+  c.switch [:r,:reverse], desc:'reverse sort alphabetically'
+  c.action do |_,options,_|
+    show(facade.list_albums(options[:taxonomy],options[:album],options[:reverse],options[:details]))
+  end
+end
+
+desc 'Count albums'
+long_desc 'Count albums optionally by name or within a taxonomy'
+#arg_name 'Describe arguments to create here'
+command :count_albums do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name'
+  c.flag [:a,:album], desc:'album name'
+  c.action do |_,options,_|
+    show(facade.count_albums(options[:taxonomy],options[:album]))
+  end
+end
+
+desc 'Add item to an album'
+long_desc 'Adds a new item, or replaces an existing item within a specified album'
+command :add_item do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.flag [:a,:album], desc:'album name', required:true
+  c.flag [:s,:syntax], desc:'item syntax instead of -i and -c'
+  c.flag [:i,:item], desc:'item name'
+  c.flag [:c,:content], desc:'item content'
+  c.action do |_,options,_|
+    options[:syntax] = "#{options[:item]}\n#{options[:content]}" unless options[:item].nil? || options[:content].nil?
+    show(facade.add_item(options[:taxonomy],options[:album],options[:syntax]))
+  end
+end
+
+desc 'Delete items'
+long_desc 'Deletes a list of items including their tag usages optionally reporting details'
+#arg_name 'Describe arguments to create here'
+command :delete_items do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.flag [:a,:album], desc:'album name', required:true
+  c.flag [:l,:list], desc:'list of albums to be deleted', required:true
+  c.switch [:d,:details], desc:'detailed output'
+  c.action do |_,options,_|
+    show(facade.delete_albums(options[:taxonomy],options[:album],options[:list],options[:details]))
+  end
+end
+
+desc 'Rename item'
+long_desc 'Rename an item within an album from current-name to new-name'
+#arg_name 'Describe arguments to create here'
+command :rename_item do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.flag [:a,:album], desc:'album name', required:true
+  c.flag [:c,:i,:current,:item], desc:'current item name', required:true
+  c.flag [:n,:new], desc:'new item name', required:true
+  c.action do |_,options,_|
+    show(facade.rename_item(options[:taxonomy],options[:album],options[:current],options[:new]))
+  end
+end
+
+desc 'List items'
+long_desc 'Lists items optionally within an album and/or taxonomy or by name and with details'
+#arg_name 'Describe arguments to create here'
+command :list_albums do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name'
+  c.flag [:a,:album], desc:'album name'
+  c.flag [:i,:item], desc:'item name'
+  c.switch [:d,:details], desc:'detailed output'
+  c.switch [:r,:reverse], desc:'reverse sort alphabetically'
+  c.action do |_,options,_|
+    show(facade.list_albums(options[:taxonomy],options[:album],options[:item],options[:reverse],options[:details]))
+  end
+end
+
+desc 'Count items'
+long_desc 'Count items optionally within an album and/or taxonomy or by name'
+#arg_name 'Describe arguments to create here'
+command :count_albums do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name'
+  c.flag [:a,:album], desc:'album name'
+  c.flag [:i,:item], desc:'item name'
+  c.action do |_,options,_|
+    show(facade.count_albums(options[:taxonomy],options[:album],options[:item]))
+  end
+end
+
+pre do |global,command,options,args|
+  # Pre logic here
+  # Return true to proceed; false to abort and not call the
+  # chosen command
+  # Use skips_pre before a command to skip this block
+  # on that command only
+  true
+end
+
+post do |global,command,options,args|
+  # Post logic here
+  # Use skips_post before a command to skip this
+  # block on that command only
+end
+
+on_error do |exception|
+  # Error logic here
+  # return false to skip default error handling
+  true
+end
+
+exit run(ARGV)

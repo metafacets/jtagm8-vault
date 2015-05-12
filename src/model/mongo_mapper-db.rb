@@ -167,7 +167,7 @@ class PTag
   key :items, Array
   key :is_root, Boolean
   key :is_folk, Boolean
-  key :item_dependent, Boolean # delete this tag if no items, false if ever instantiated outwith an item (e.g. via Facade.add_tags)
+  key :item_dependent, Boolean # delete this tag if true and no items, false if ever instantiated outwith an item (e.g. via Facade.add_tags)
   key :taxonomy, String
   key :item_ids, Array
   many :items, :class_name => 'PItem', :in => :item_ids

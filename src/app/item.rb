@@ -38,6 +38,8 @@ class Album < PAlbum
   end
 
   def delete_items(item_list)
+    # deletes items, and subtracts them from associated tags
+    # deletes associated tags if these exist solely because of the deleted items
     found = list_items&item_list
     tags_to_delete = []
     found.each do |item_name|

@@ -463,7 +463,7 @@ class Facade
       item_list = 'nil:NilClass' if item_list.nil?
       raise 'item list missing' if item_list.empty? || item_list == 'nil:NilClass'
       list = item_list.gsub(/\s/,'').split(',')
-      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       tax = Taxonomy.get_by_name(taxonomy_name)
       raise "album \"#{album_name}\" not found in taxonomy \"#{taxonomy_name}\"" unless tax.has_album?(album_name)
       album = tax.get_album_by_name(album_name)

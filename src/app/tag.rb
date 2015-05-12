@@ -54,6 +54,7 @@ class Taxonomy < PTaxonomy
 
   def delete_tag(name)
     # joins parents to children of deleted tag
+    # remember called by Album.delete_item if item_dependent tag has no items
     if has_tag?(name)
       #puts "Taxonomy.delete_tag: name=#{name}"
       tag = get_tag_by_name(name)
@@ -89,15 +90,15 @@ class Taxonomy < PTaxonomy
     end
   end
 
-  def instantiate(tag_ddl)
+  def instantiate(tag_ddl,item_dependent=true)
     leaves = []
     Ddl.parse(tag_ddl)
     if Ddl.has_tags?
-      tags = Ddl.tags.map {|name| get_lazy_tag(name)}
-      leaves = Ddl.leaves.map {|name| get_lazy_tag(name)}
+      tags = Ddl.tags.map {|name| get_lazy_tag(name,item_dependent)}
+      leaves = Ddl.leaves.map {|name| get_lazy_tag(name,item_dependent)}
       Ddl.links.each do |pair|
         [0,1].each do |i|
-          pair[i] = pair[i].map {|name| get_lazy_tag(name)}
+          pair[i] = pair[i].map {|name| get_lazy_tag(name,item_dependent)}
         end
         link(pair[0],pair[1],false)
       end
@@ -135,14 +136,20 @@ class Taxonomy < PTaxonomy
 
   def add_tag(name, name_parent=nil) add_tags([name],name_parent) end
 
-  def get_lazy_tag(node)
+  def get_lazy_tag(node,item_dependent=true)
+    # resets item_dependence if false
+    check_item_dependence = lambda{|tag,item_dependent|
+      tag.item_dependent = false if tag.item_dependent && !item_dependent
+      tag.save
+      tag
+    }
     case
       when node.class == 'Tag'
-        node
+        check_item_dependence.call(node,item_dependent)
       when has_tag?(node)
-        get_tag_by_name(node)
+        check_item_dependence.call(get_tag_by_name(node),item_dependent)
       else
-        Tag.new(node,self)
+        Tag.new(node,self,item_dependent)
     end
   end
 
@@ -222,8 +229,8 @@ class Tag < PTag
     name.nil? ? self.count > 0 : self.count_by_name(name) > 0
   end
 
-  def initialize(name,tax)
-    super(name:name,is_root:false,is_folk:true,taxonomy:tax._id)
+  def initialize(name,tax,item_dependent=true)
+    super(name:name,is_root:false,is_folk:true,taxonomy:tax._id,item_dependent:item_dependent)
     save
   end
 

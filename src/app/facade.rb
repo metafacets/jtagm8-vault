@@ -137,7 +137,7 @@ class Facade
       tax = Taxonomy.get_by_name(taxonomy_name)
       tags_before = tax.list_tags
       links_before = tax.count_links
-      tax.instantiate(tag_syntax)
+      tax.instantiate(tag_syntax,false)
       tags_added = (tax.list_tags-tags_before).sort.map{|name| "\"#{name}\""}
       d_insert = ''
       tags_added.each{|name| d_insert += "Tag \"#{name}\" added"} if details
@@ -454,6 +454,7 @@ class Facade
   end
 
   def delete_items(taxonomy_name,album_name,item_list,details=false)
+    # details could report on item_dependent tags that are deleted
     begin
       taxonomy_name = 'nil:NilClass' if taxonomy_name.nil?
       raise 'taxonomy unspecified' if taxonomy_name.empty? || taxonomy_name == 'nil:NilClass'

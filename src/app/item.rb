@@ -39,11 +39,17 @@ class Album < PAlbum
 
   def delete_items(item_list)
     found = list_items&item_list
+    tags_to_delete = []
     found.each do |item_name|
       item = get_item_by_name(item_name)
-      item.tags.each{|tag| tag.subtract_items([self])}
+      item.tags.each do |tag|
+        tag.items -= [item]
+        tags_to_delete |= [tag.name] if tag.item_dependent && tag.items.empty?
+      end
+      self.items -= [item]
       item.delete
     end
+    tags_to_delete.each{|name| taxonomy.delete_tag(name)}
     save
   end
 

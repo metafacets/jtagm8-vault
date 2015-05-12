@@ -167,6 +167,7 @@ class PTag
   key :items, Array
   key :is_root, Boolean
   key :is_folk, Boolean
+  key :item_dependent, Boolean # delete this tag if no items, false if ever instantiated outwith an item (e.g. via Facade.add_tags)
   key :taxonomy, String
   key :item_ids, Array
   many :items, :class_name => 'PItem', :in => :item_ids
@@ -239,14 +240,14 @@ class PTag
     pull_all(children:children.map{|child| child._id.to_s})
   end
 
+  def list_items
+    items.map{|item| item.name}
+  end
+
   def union_items(items)
     items.each{|item| add_to_set(items:item._id.to_s)} # manual mapping only
     self.items |= items
     save
-  end
-
-  def subtract_items(items)
-    pull_all(items:items.map{|item| item._id.to_s})
   end
 
   def register_root; set(is_root:true,is_folk:false) end

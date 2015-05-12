@@ -488,8 +488,9 @@ class Facade
   def rename_item(taxonomy_name,album_name,item_name,new_name)
     begin
       taxonomy_name = 'nil:NilClass' if taxonomy_name.nil?
-      raise 'taxonomy unspecified' if taxonomy_name.empty? || taxonomy_name == 'nil:NilClass'
       album_name = 'nil:NilClass' if album_name.nil?
+      location = "album \"#{album_name}\" of taxonomy \"#{taxonomy_name}\""
+      raise 'taxonomy unspecified' if taxonomy_name.empty? || taxonomy_name == 'nil:NilClass'
       raise 'album unspecified' if album_name.empty? || album_name == 'nil:NilClass'
       item_name = 'nil:NilClass' if item_name.nil?
       raise 'item unspecified' if item_name.empty? || item_name == 'nil:NilClass'
@@ -501,14 +502,14 @@ class Facade
       tax = Taxonomy.get_by_name(taxonomy_name)
       raise "album \"#{album_name}\" not found in taxonomy \"#{taxonomy_name}\"" unless tax.has_album?(album_name)
       album = tax.get_album_by_name(album_name)
-      raise "item \"#{item_name}\" not found" unless album.has_item?(item_name)
-      raise "item \"#{new_name}\" name taken" if album.has_item?(new_name)
+      raise "item \"#{item_name}\" not found in #{location}" unless album.has_item?(item_name)
+      raise "item \"#{new_name}\" name taken by #{location}" if album.has_item?(new_name)
       item = album.get_item_by_name(item_name)
       item.rename(new_name)
       raise "name is \"#{item.name}\"" unless item.name == new_name
-      [0,"Item \"#{item_name}\" renamed to \"#{new_name}\" in album \"#{album_name}\" of taxonomy \"#{taxonomy_name}\""]
+      [0,"Item renamed from \"#{item_name}\" to \"#{new_name}\" in #{location}"]
     rescue => e
-      [1,"rename_item \"#{item_name}\" to \"#{new_name}\" in album \"#{album_name}\" of taxonomy \"#{taxonomy_name}\" failed: #{e}"]
+      [1,"rename_item \"#{item_name}\" to \"#{new_name}\" in #{location} failed: #{e}"]
     end
   end
 

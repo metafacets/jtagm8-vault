@@ -1063,165 +1063,219 @@ describe Item do
       it "result data" do expect(result_data).to be_nil end
     end
   end
-  # describe :rename_album do
-  #   describe 'rename valid' do
-  #     Tagm8Db.wipe
-  #     face = Facade.instance
-  #     face.add_taxonomy('tax1')
-  #     face.add_album('tax1','alm1')
-  #     result = face.rename_album('tax1','alm1','alm2')
-  #     result_code = result[0]
-  #     result_msg  = result[1]
-  #     result_data = result[2]
-  #     it "result_code" do expect(result_code).to eq(0) end
-  #     it "result message" do expect(result_msg).to eq('Album renamed from "alm1" to "alm2" in taxonomy "tax1"') end
-  #     it "result data" do expect(result_data).to be_nil end
-  #   end
-  #   describe 'taxonomy unspecified' do
-  #     Tagm8Db.wipe
-  #     face = Facade.instance
-  #     face.add_taxonomy('tax1')
-  #     face.add_album('tax1','alm1')
-  #     result = face.rename_album('','alm1','alm2')
-  #     result_code = result[0]
-  #     result_msg  = result[1]
-  #     result_data = result[2]
-  #     it "result_code" do expect(result_code).to eq(1) end
-  #     it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm2" in taxonomy "" failed: taxonomy unspecified') end
-  #     it "result data" do expect(result_data).to be_nil end
-  #   end
-  #   describe 'taxonomy nil' do
-  #     Tagm8Db.wipe
-  #     face = Facade.instance
-  #     face.add_taxonomy('tax1')
-  #     face.add_album('tax1','alm1')
-  #     result = face.rename_album(nil,'alm1','alm2')
-  #     result_code = result[0]
-  #     result_msg  = result[1]
-  #     result_data = result[2]
-  #     it "result_code" do expect(result_code).to eq(1) end
-  #     it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm2" in taxonomy "nil:NilClass" failed: taxonomy unspecified') end
-  #     it "result data" do expect(result_data).to be_nil end
-  #   end
-  #   describe 'taxonomy not found' do
-  #     Tagm8Db.wipe
-  #     face = Facade.instance
-  #     face.add_taxonomy('tax1')
-  #     face.add_album('tax1','alm1')
-  #     result = face.rename_album('tax2','alm1','alm2')
-  #     result_code = result[0]
-  #     result_msg  = result[1]
-  #     result_data = result[2]
-  #     it "result_code" do expect(result_code).to eq(1) end
-  #     it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm2" in taxonomy "tax2" failed: taxonomy "tax2" not found') end
-  #     it "result data" do expect(result_data).to be_nil end
-  #   end
-  #   describe 'album unspecified' do
-  #     Tagm8Db.wipe
-  #     face = Facade.instance
-  #     face.add_taxonomy('tax1')
-  #     face.add_album('tax1','alm1')
-  #     result = face.rename_album('tax1','','alm2')
-  #     result_code = result[0]
-  #     result_msg  = result[1]
-  #     result_data = result[2]
-  #     it "result_code" do expect(result_code).to eq(1) end
-  #     it "result message" do expect(result_msg).to eq('rename_album "" to "alm2" in taxonomy "tax1" failed: album unspecified') end
-  #     it "result data" do expect(result_data).to be_nil end
-  #   end
-  #   describe 'album nil' do
-  #     Tagm8Db.wipe
-  #     face = Facade.instance
-  #     face.add_taxonomy('tax1')
-  #     face.add_album('tax1','alm1')
-  #     result = face.rename_album('tax1',nil,'alm2')
-  #     result_code = result[0]
-  #     result_msg  = result[1]
-  #     result_data = result[2]
-  #     it "result_code" do expect(result_code).to eq(1) end
-  #     it "result message" do expect(result_msg).to eq('rename_album "nil:NilClass" to "alm2" in taxonomy "tax1" failed: album unspecified') end
-  #     it "result data" do expect(result_data).to be_nil end
-  #   end
-  #   describe 'album not found' do
-  #     Tagm8Db.wipe
-  #     face = Facade.instance
-  #     face.add_taxonomy('tax1')
-  #     face.add_album('tax1','alm1')
-  #     result = face.rename_album('tax1','alm2','alm3')
-  #     result_code = result[0]
-  #     result_msg  = result[1]
-  #     result_data = result[2]
-  #     it "result_code" do expect(result_code).to eq(1) end
-  #     it "result message" do expect(result_msg).to eq('rename_album "alm2" to "alm3" in taxonomy "tax1" failed: album "alm2" not found in taxonomy "tax1"') end
-  #     it "result data" do expect(result_data).to be_nil end
-  #   end
-  #   describe 'rename unspecified' do
-  #     Tagm8Db.wipe
-  #     face = Facade.instance
-  #     face.add_taxonomy('tax1')
-  #     face.add_album('tax1','alm1')
-  #     result = face.rename_album('tax1','alm1','')
-  #     result_code = result[0]
-  #     result_msg  = result[1]
-  #     result_data = result[2]
-  #     it "result_code" do expect(result_code).to eq(1) end
-  #     it "result message" do expect(result_msg).to eq('rename_album "alm1" to "" in taxonomy "tax1" failed: album rename unspecified') end
-  #     it "result data" do expect(result_data).to be_nil end
-  #   end
-  #   describe 'rename nil' do
-  #     Tagm8Db.wipe
-  #     face = Facade.instance
-  #     face.add_taxonomy('tax1')
-  #     face.add_album('tax1','alm1')
-  #     result = face.rename_album('tax1','alm1',nil)
-  #     result_code = result[0]
-  #     result_msg  = result[1]
-  #     result_data = result[2]
-  #     it "result_code" do expect(result_code).to eq(1) end
-  #     it "result message" do expect(result_msg).to eq('rename_album "alm1" to "nil:NilClass" in taxonomy "tax1" failed: album rename unspecified') end
-  #     it "result data" do expect(result_data).to be_nil end
-  #   end
-  #   describe 'rename unchanged' do
-  #     Tagm8Db.wipe
-  #     face = Facade.instance
-  #     face.add_taxonomy('tax1')
-  #     face.add_album('tax1','alm1')
-  #     result = face.rename_album('tax1','alm1','alm1')
-  #     result_code = result[0]
-  #     result_msg  = result[1]
-  #     result_data = result[2]
-  #     it "result_code" do expect(result_code).to eq(1) end
-  #     it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm1" in taxonomy "tax1" failed: album rename unchanged') end
-  #     it "result data" do expect(result_data).to be_nil end
-  #   end
-  #   describe 'rename taken' do
-  #     Tagm8Db.wipe
-  #     face = Facade.instance
-  #     face.add_taxonomy('tax1')
-  #     face.add_album('tax1','alm1')
-  #     face.add_album('tax1','alm2')
-  #     result = face.rename_album('tax1','alm1','alm2')
-  #     result_code = result[0]
-  #     result_msg  = result[1]
-  #     result_data = result[2]
-  #     it "result_code" do expect(result_code).to eq(1) end
-  #     it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm2" in taxonomy "tax1" failed: album "alm2" taken by taxonomy "tax1"') end
-  #     it "result data" do expect(result_data).to be_nil end
-  #   end
-  #   describe 'rename invalid' do
-  #     Tagm8Db.wipe
-  #     face = Facade.instance
-  #     face.add_taxonomy('tax1')
-  #     face.add_album('tax1','alm1')
-  #     result = face.rename_album('tax1','alm1','alm%')
-  #     result_code = result[0]
-  #     result_msg  = result[1]
-  #     result_data = result[2]
-  #     it "result_code" do expect(result_code).to eq(1) end
-  #     it "result message" do expect(result_msg).to eq('rename_album "alm1" to "alm%" in taxonomy "tax1" failed: album "alm%" invalid - use alphanumeric and _ characters only') end
-  #     it "result data" do expect(result_data).to be_nil end
-  #   end
-  # end
+  describe :rename_item do
+    describe 'rename valid' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      face.add_item('tax1','alm1',"itm1\ncontent1")
+      result = face.rename_item('tax1','alm1','itm1','itm2')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(0) end
+      it "result message" do expect(result_msg).to eq('Item renamed from "itm1" to "itm2" in album "alm1" of taxonomy "tax1"') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'taxonomy unspecified' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      face.add_item('tax1','alm1',"itm1\ncontent1")
+      result = face.rename_item('','alm1','itm1','itm2')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('rename_item "itm1" to "itm2" in album "alm1" of taxonomy "" failed: taxonomy unspecified') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'taxonomy nil' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      face.add_item('tax1','alm1',"itm1\ncontent1")
+      result = face.rename_item(nil,'alm1','itm1','itm2')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('rename_item "itm1" to "itm2" in album "alm1" of taxonomy "nil:NilClass" failed: taxonomy unspecified') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'taxonomy not found' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      face.add_item('tax1','alm1',"itm1\ncontent1")
+      result = face.rename_item('tax2','alm1','itm1','itm2')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('rename_item "itm1" to "itm2" in album "alm1" of taxonomy "tax2" failed: taxonomy "tax2" not found') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'album unspecified' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      face.add_item('tax1','alm1',"itm1\ncontent1")
+      result = face.rename_item('tax1','','itm1','itm2')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('rename_item "itm1" to "itm2" in album "" of taxonomy "tax1" failed: album unspecified') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'album nil' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      face.add_item('tax1','alm1',"itm1\ncontent1")
+      result = face.rename_item('tax1',nil,'itm1','itm2')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('rename_item "itm1" to "itm2" in album "nil:NilClass" of taxonomy "tax1" failed: album unspecified') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'album not found' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      face.add_item('tax1','alm1',"itm1\ncontent1")
+      result = face.rename_item('tax1','alm2','itm1','itm2')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('rename_item "itm1" to "itm2" in album "alm2" of taxonomy "tax1" failed: album "alm2" not found in taxonomy "tax1"') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'item unspecified' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      face.add_item('tax1','alm1',"itm1\ncontent1")
+      result = face.rename_item('tax1','alm1','','itm2')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('rename_item "" to "itm2" in album "alm1" of taxonomy "tax1" failed: item unspecified') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'item nil' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      face.add_item('tax1','alm1',"itm1\ncontent1")
+      result = face.rename_item('tax1','alm1',nil,'itm2')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('rename_item "nil:NilClass" to "itm2" in album "alm1" of taxonomy "tax1" failed: item unspecified') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'item not found' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      face.add_item('tax1','alm1',"itm1\ncontent1")
+      result = face.rename_item('tax1','alm1','itm','itm2')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('rename_item "itm" to "itm2" in album "alm1" of taxonomy "tax1" failed: item "itm" not found in album "alm1" of taxonomy "tax1"') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'rename unspecified' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      face.add_item('tax1','alm1',"itm1\ncontent1")
+      result = face.rename_item('tax1','alm1','itm1','')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('rename_item "itm1" to "" in album "alm1" of taxonomy "tax1" failed: item rename unspecified') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'rename nil' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      face.add_item('tax1','alm1',"itm1\ncontent1")
+      result = face.rename_item('tax1','alm1','itm1',nil)
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('rename_item "itm1" to "nil:NilClass" in album "alm1" of taxonomy "tax1" failed: item rename unspecified') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'rename unchanged' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      face.add_item('tax1','alm1',"itm1\ncontent1")
+      result = face.rename_item('tax1','alm1','itm1','itm1')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('rename_item "itm1" to "itm1" in album "alm1" of taxonomy "tax1" failed: item rename unchanged') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'rename taken' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1',"itm2\ncontent2")
+      result = face.rename_item('tax1','alm1','itm1','itm2')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('rename_item "itm1" to "itm2" in album "alm1" of taxonomy "tax1" failed: item "itm2" name taken by album "alm1" of taxonomy "tax1"') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'rename invalid' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      face.add_item('tax1','alm1',"itm1\ncontent1")
+      result = face.rename_item('tax1','alm1','itm1','itm%')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('rename_item "itm1" to "itm%" in album "alm1" of taxonomy "tax1" failed: item "itm%" invalid - use alphanumeric and _ characters only') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+  end
 end
 
 

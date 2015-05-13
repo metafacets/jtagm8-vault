@@ -519,6 +519,10 @@ class Facade
 
   def count_items(taxonomy_name=nil,album_name=nil,item_name=nil)
     begin
+      what = ''
+      what += " with name \"#{item_name}\"" unless item_name.nil?
+      what += " in album \"#{album_name}\"" unless album_name.nil?
+      what += " of taxonomy \"#{taxonomy_name}\"" unless taxonomy_name.nil?
       raise 'album unspecified' if !album_name.nil? && album_name.empty?
       raise 'item unspecified' if !item_name.nil? && item_name.empty?
       if taxonomy_name.nil?
@@ -541,7 +545,7 @@ class Facade
       res = albums.map{|album| album.count_items(item_name)}.inject(:+)
       [0,'',res]
     rescue => e
-      [1,"count_items failed: #{e}"]
+      [1,"count_items#{what} failed: #{e}"]
     end
   end
 

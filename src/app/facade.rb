@@ -362,6 +362,8 @@ class Facade
 
   def list_albums(taxonomy_name=nil,album_name=nil,reverse=false,details=false)
     begin
+      raise 'taxonomy unspecified' if !taxonomy_name.nil? && taxonomy_name.empty?
+      raise 'album unspecified' if !album_name.nil? && album_name.empty?
       if taxonomy_name.nil?
         res = Album.list
         raise "No albums exist" if res.empty?
@@ -419,6 +421,8 @@ class Facade
 
   def count_albums(taxonomy_name=nil,album_name=nil)
     begin
+      raise 'taxonomy unspecified' if !taxonomy_name.nil? && taxonomy_name.empty?
+      raise 'album unspecified' if !album_name.nil? && album_name.empty?
       raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       taxonomy_name.nil? ? res = Album.count_by_name(album_name) : res = Taxonomy.get_by_name(taxonomy_name).count_albums(album_name)
       [0,'',res]
@@ -510,6 +514,34 @@ class Facade
       [0,"Item renamed from \"#{item_name}\" to \"#{new_name}\" in #{location}"]
     rescue => e
       [1,"rename_item \"#{item_name}\" to \"#{new_name}\" in #{location} failed: #{e}"]
+    end
+  end
+
+  def count_items(taxonomy_name=nil,album_name=nil,item_name=nil)
+    begin
+      raise 'album unspecified' if !album_name.nil? && album_name.empty?
+      raise 'item unspecified' if !item_name.nil? && item_name.empty?
+      if taxonomy_name.nil?
+        raise 'no taxonomies found' unless Taxonomy.exists?
+        unless Album.exists?(album_name)
+          raise 'no albums found' if album_name.nil?
+          raise "album \"#{album_name}\" not found"
+        end
+        albums = Album.get_by_name(album_name)
+      else
+        raise 'taxonomy unspecified' if taxonomy_name.empty?
+        raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+        tax = Taxonomy.get_by_name(taxonomy_name)
+        unless tax.has_album?(album_name)
+          album_name.nil? ? msg = 'no albums' : msg = "album \"#{album_name}\" not"
+          raise "#{msg} found in taxonomy \"#{taxonomy_name}\""
+        end
+        album_name.nil? ? albums = tax.albums : albums = [tax.get_album_by_name(album_name)]
+      end
+      res = albums.map{|album| album.count_items(item_name)}.inject(:+)
+      [0,'',res]
+    rescue => e
+      [1,"count_items failed: #{e}"]
     end
   end
 

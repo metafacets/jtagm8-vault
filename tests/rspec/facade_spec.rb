@@ -1276,6 +1276,252 @@ describe Item do
       it "result data" do expect(result_data).to be_nil end
     end
   end
+  describe :count_items do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_album('tax1','alm1')
+    face.add_item('tax1','alm1',"itm1\ncontent1")
+    face.add_item('tax1','alm1',"itm2\ncontent2")
+    face.add_album('tax1','alm2')
+    face.add_item('tax1','alm2',"itm2\ncontent2")
+    face.add_album('tax1','alm3')
+    face.add_taxonomy('tax2')
+    face.add_album('tax2','alm1')
+    face.add_item('tax2','alm1',"itm1\ncontent1")
+    face.add_album('tax2','alm2')
+    face.add_item('tax2','alm2',"itm2\ncontent2")
+    face.add_album('tax2','alm3')
+    face.add_taxonomy('tax3')
+    face.add_album('tax3','alm1')
+    face.add_taxonomy('tax4')
+    describe 'taxonomy, album, name specified' do
+      describe '1 found' do
+        result = face.count_items('tax1','alm1','itm1')
+        result_code = result[0]
+        result_msg  = result[1]
+        result_data = result[2]
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq(1) end
+      end
+      describe 'none found' do
+        result = face.count_items('tax1','alm2','itm1')
+        result_code = result[0]
+        result_msg  = result[1]
+        result_data = result[2]
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq(0) end
+      end
+    end
+    describe 'taxonomy, album specified' do
+      describe '2 found' do
+        result = face.count_items('tax1','alm1')
+        result_code = result[0]
+        result_msg  = result[1]
+        result_data = result[2]
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq(2) end
+      end
+      describe 'none found' do
+        result = face.count_items('tax1','alm3')
+        result_code = result[0]
+        result_msg  = result[1]
+        result_data = result[2]
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq(0) end
+      end
+    end
+    describe 'taxonomy, name specified' do
+      describe '2 found' do
+        result = face.count_items('tax1',nil,'itm2')
+        result_code = result[0]
+        result_msg  = result[1]
+        result_data = result[2]
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq(2) end
+      end
+      describe 'none found' do
+        result = face.count_items('tax1',nil,'itm4')
+        result_code = result[0]
+        result_msg  = result[1]
+        result_data = result[2]
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq(0) end
+      end
+    end
+    describe 'album, name specified' do
+      describe '2 found' do
+        result = face.count_items(nil,'alm1','itm1')
+        result_code = result[0]
+        result_msg  = result[1]
+        result_data = result[2]
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq(2) end
+      end
+      describe 'none found' do
+        result = face.count_items(nil,'alm2','itm1')
+        result_code = result[0]
+        result_msg  = result[1]
+        result_data = result[2]
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq(0) end
+      end
+    end
+    describe 'taxonomy specified' do
+      describe '2 found' do
+        result = face.count_items('tax2')
+        result_code = result[0]
+        result_msg  = result[1]
+        result_data = result[2]
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq(2) end
+      end
+      describe 'none found' do
+        result = face.count_items('tax3')
+        result_code = result[0]
+        result_msg  = result[1]
+        result_data = result[2]
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq(0) end
+      end
+    end
+    describe 'album specified' do
+      describe '2 found' do
+        result = face.count_items(nil,'alm2')
+        result_code = result[0]
+        result_msg  = result[1]
+        result_data = result[2]
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq(2) end
+      end
+      describe 'none found' do
+        result = face.count_items(nil,'alm3')
+        result_code = result[0]
+        result_msg  = result[1]
+        result_data = result[2]
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq(0) end
+      end
+    end
+    describe 'name specified' do
+      describe '2 found' do
+        result = face.count_items(nil,nil,'itm1')
+        result_code = result[0]
+        result_msg  = result[1]
+        result_data = result[2]
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq(2) end
+      end
+      describe 'none found' do
+        result = face.count_items(nil,nil,'itm3')
+        result_code = result[0]
+        result_msg  = result[1]
+        result_data = result[2]
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq(0) end
+      end
+    end
+    describe 'taxonomy unspecified' do
+      result = face.count_items('','alm1','itm1')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('count_items failed: taxonomy unspecified') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'taxonomy not found' do
+      result = face.count_items('tax5','alm1','itm1')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('count_items failed: taxonomy "tax5" not found') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'album unspecified' do
+      result = face.count_items('tax1','','itm1')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('count_items failed: album unspecified') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'album not found in taxonomy' do
+      result = face.count_items('tax3','alm2','itm1')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('count_items failed: album "alm2" not found in taxonomy "tax3"') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'album not found' do
+      result = face.count_items(nil,'alm4','itm1')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('count_items failed: album "alm4" not found') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'no albums found in taxonomy' do
+      result = face.count_items('tax4')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('count_items failed: no albums found in taxonomy "tax4"') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'name unspecified' do
+      result = face.count_items('tax1','alm1','')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('count_items failed: item unspecified') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'no taxonomies found' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      result = face.count_items(nil,nil,'itm1')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('count_items failed: no taxonomies found') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+    describe 'no albums found' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      result = face.count_items(nil,nil,'itm1')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('count_items failed: no albums found') end
+      it "result data" do expect(result_data).to be_nil end
+    end
+  end
 end
 
 

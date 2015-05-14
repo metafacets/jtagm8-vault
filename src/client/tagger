@@ -356,8 +356,9 @@ command :list_items do |c|
   c.flag [:i,:item], desc:'item name'
   c.switch [:d,:details], desc:'detailed output'
   c.switch [:r,:reverse], desc:'reverse sort alphabetically'
+  c.switch [:c,:content], desc:'show item content'
   c.action do |_,options,_|
-    show(facade.list_items(options[:taxonomy],options[:album],options[:item],options[:reverse],options[:details]))
+    show(facade.list_items(options[:taxonomy],options[:album],options[:item],options[:reverse],options[:details],options[:content]))
   end
 end
 

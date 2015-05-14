@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 require 'gli'
 begin # XXX: Remove this begin/rescue before distributing your app
-require 'tagger'
-require 'drb'
+  require 'tagger'
+  require 'drb'
 rescue LoadError
   STDERR.puts "In development, you need to use `bundle exec bin/tagger` to run your app"
   STDERR.puts "At install-time, RubyGems will make sure lib, etc. are in the load path"
@@ -41,6 +41,15 @@ def show(res)
   puts res unless res.empty?
   puts unless res.empty? || msg.empty?
   puts msg unless msg.empty?
+end
+
+desc 'Wipe current database'
+long_desc 'Wipes all data from current database'
+#arg_name 'Describe arguments to create here'
+command :wipe do |c|
+  c.action do |_,_,_|
+    show(facade.wipe)
+  end
 end
 
 desc 'Add a new Taxonomy'
@@ -341,26 +350,26 @@ end
 desc 'List items'
 long_desc 'Lists items optionally within an album and/or taxonomy or by name and with details'
 #arg_name 'Describe arguments to create here'
-command :list_albums do |c|
+command :list_items do |c|
   c.flag [:t,:taxonomy], desc:'taxonomy name'
   c.flag [:a,:album], desc:'album name'
   c.flag [:i,:item], desc:'item name'
   c.switch [:d,:details], desc:'detailed output'
   c.switch [:r,:reverse], desc:'reverse sort alphabetically'
   c.action do |_,options,_|
-    show(facade.list_albums(options[:taxonomy],options[:album],options[:item],options[:reverse],options[:details]))
+    show(facade.list_items(options[:taxonomy],options[:album],options[:item],options[:reverse],options[:details]))
   end
 end
 
 desc 'Count items'
 long_desc 'Count items optionally within an album and/or taxonomy or by name'
 #arg_name 'Describe arguments to create here'
-command :count_albums do |c|
+command :count_items do |c|
   c.flag [:t,:taxonomy], desc:'taxonomy name'
   c.flag [:a,:album], desc:'album name'
   c.flag [:i,:item], desc:'item name'
   c.action do |_,options,_|
-    show(facade.count_albums(options[:taxonomy],options[:album],options[:item]))
+    show(facade.count_items(options[:taxonomy],options[:album],options[:item]))
   end
 end
 

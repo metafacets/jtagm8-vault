@@ -695,7 +695,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      result = face.add_item('tax1','alm1',"itm1\n#tag1,tag2\ncontent line 1\ncontent line 2")
+      result = face.add_item('tax1','alm1','itm1\n#tag1,tag2\ncontent line 1\ncontent line 2')
       result_code = result[0]
       result_msg  = result[1]
       result_data = result[2]
@@ -719,7 +719,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      result = face.add_item('','alm1',"itm1\ncontent1")
+      result = face.add_item('','alm1','itm1\ncontent1')
       result_code = result[0]
       result_msg  = result[1]
       result_data = result[2]
@@ -732,7 +732,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      result = face.add_item(nil,'alm1',"itm1\ncontent1")
+      result = face.add_item(nil,'alm1','itm1\ncontent1')
       result_code = result[0]
       result_msg  = result[1]
       result_data = result[2]
@@ -745,7 +745,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      result = face.add_item('tax2','alm1',"itm1\ncontent1")
+      result = face.add_item('tax2','alm1','itm1\ncontent1')
       result_code = result[0]
       result_msg  = result[1]
       result_data = result[2]
@@ -758,7 +758,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      result = face.add_item('tax1','',"itm1\ncontent1")
+      result = face.add_item('tax1','','itm1\ncontent1')
       result_code = result[0]
       result_msg  = result[1]
       result_data = result[2]
@@ -771,7 +771,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      result = face.add_item('tax1',nil,"itm1\ncontent1")
+      result = face.add_item('tax1',nil,'itm1\ncontent1')
       result_code = result[0]
       result_msg  = result[1]
       result_data = result[2]
@@ -784,7 +784,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      result = face.add_item('tax1','alm2',"itm1\ncontent1")
+      result = face.add_item('tax1','alm2','itm1\ncontent1')
       result_code = result[0]
       result_msg  = result[1]
       result_data = result[2]
@@ -823,8 +823,8 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
-      result = face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
+      result = face.add_item('tax1','alm1','itm1\ncontent1')
       result_code = result[0]
       result_msg  = result[1]
       result_data = result[2]
@@ -837,7 +837,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      result = face.add_item('tax1','alm1',"itm%\ncontent1")
+      result = face.add_item('tax1','alm1','itm%\ncontent1')
       result_code = result[0]
       result_msg  = result[1]
       result_data = result[2]
@@ -852,7 +852,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.delete_items('tax1','alm1','itm1')
       result_code = result[0]
       result_msg  = result[1]
@@ -866,8 +866,8 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
-      face.add_item('tax1','alm1',"itm2\ncontent2")
+      face.add_item('tax1','alm1','itm1\ncontent1')
+      face.add_item('tax1','alm1','itm2\ncontent2')
       result = face.delete_items('tax1','alm1','itm1,itm2')
       result_code = result[0]
       result_msg  = result[1]
@@ -881,8 +881,8 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
-      face.add_item('tax1','alm1',"itm2\ncontent2")
+      face.add_item('tax1','alm1','itm1\ncontent1')
+      face.add_item('tax1','alm1','itm2\ncontent2')
       result = face.delete_items('tax1','alm1','itm1,itm3')
       result_code = result[0]
       result_msg  = result[1]
@@ -896,9 +896,9 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
-      face.add_item('tax1','alm1',"itm2\ncontent2")
-      face.add_item('tax1','alm1',"itm3\ncontent3")
+      face.add_item('tax1','alm1','itm1\ncontent1')
+      face.add_item('tax1','alm1','itm2\ncontent2')
+      face.add_item('tax1','alm1','itm3\ncontent3')
       result = face.delete_items('tax1','alm1','itm1,itm2,itm4',true)
       result_code = result[0]
       result_msg  = result[1]
@@ -913,8 +913,8 @@ describe Item do
       face.add_taxonomy('tax1')
       face.add_tags('tax1','t1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\n#t1,t2,t3,t4\ncontent1")
-      face.add_item('tax1','alm1',"itm2\n#t3\ncontent2")
+      face.add_item('tax1','alm1','itm1\n#t1,t2,t3,t4\ncontent1')
+      face.add_item('tax1','alm1','itm2\n#t3\ncontent2')
       face.add_tags('tax1','t2')
       result = face.delete_items('tax1','alm1','itm1')
       result_code = result[0]
@@ -940,8 +940,8 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
-      face.add_item('tax1','alm1',"itm2\ncontent2")
+      face.add_item('tax1','alm1','itm1\ncontent1')
+      face.add_item('tax1','alm1','itm2\ncontent2')
       result = face.delete_items('tax1','alm1','itm3,itm4')
       result_code = result[0]
       result_msg  = result[1]
@@ -955,7 +955,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.delete_items('','alm1','itm1')
       result_code = result[0]
       result_msg  = result[1]
@@ -969,7 +969,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.delete_items(nil,'alm1','itm1')
       result_code = result[0]
       result_msg  = result[1]
@@ -983,7 +983,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.delete_items('tax2','alm1','itm1')
       result_code = result[0]
       result_msg  = result[1]
@@ -997,7 +997,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.delete_items('tax1','','itm1')
       result_code = result[0]
       result_msg  = result[1]
@@ -1011,7 +1011,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.delete_items('tax1',nil,'itm1')
       result_code = result[0]
       result_msg  = result[1]
@@ -1025,7 +1025,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.delete_items('tax1','alm2','itm1')
       result_code = result[0]
       result_msg  = result[1]
@@ -1039,7 +1039,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.delete_items('tax1','alm1','')
       result_code = result[0]
       result_msg  = result[1]
@@ -1053,7 +1053,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.delete_items('tax1','alm1',nil)
       result_code = result[0]
       result_msg  = result[1]
@@ -1069,7 +1069,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.rename_item('tax1','alm1','itm1','itm2')
       result_code = result[0]
       result_msg  = result[1]
@@ -1083,7 +1083,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.rename_item('','alm1','itm1','itm2')
       result_code = result[0]
       result_msg  = result[1]
@@ -1097,7 +1097,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.rename_item(nil,'alm1','itm1','itm2')
       result_code = result[0]
       result_msg  = result[1]
@@ -1111,7 +1111,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.rename_item('tax2','alm1','itm1','itm2')
       result_code = result[0]
       result_msg  = result[1]
@@ -1125,7 +1125,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.rename_item('tax1','','itm1','itm2')
       result_code = result[0]
       result_msg  = result[1]
@@ -1139,7 +1139,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.rename_item('tax1',nil,'itm1','itm2')
       result_code = result[0]
       result_msg  = result[1]
@@ -1153,7 +1153,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.rename_item('tax1','alm2','itm1','itm2')
       result_code = result[0]
       result_msg  = result[1]
@@ -1167,7 +1167,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.rename_item('tax1','alm1','','itm2')
       result_code = result[0]
       result_msg  = result[1]
@@ -1181,7 +1181,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.rename_item('tax1','alm1',nil,'itm2')
       result_code = result[0]
       result_msg  = result[1]
@@ -1195,7 +1195,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.rename_item('tax1','alm1','itm','itm2')
       result_code = result[0]
       result_msg  = result[1]
@@ -1209,7 +1209,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.rename_item('tax1','alm1','itm1','')
       result_code = result[0]
       result_msg  = result[1]
@@ -1223,7 +1223,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.rename_item('tax1','alm1','itm1',nil)
       result_code = result[0]
       result_msg  = result[1]
@@ -1237,7 +1237,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.rename_item('tax1','alm1','itm1','itm1')
       result_code = result[0]
       result_msg  = result[1]
@@ -1251,8 +1251,8 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
-      face.add_item('tax1','alm1',"itm2\ncontent2")
+      face.add_item('tax1','alm1','itm1\ncontent1')
+      face.add_item('tax1','alm1','itm2\ncontent2')
       result = face.rename_item('tax1','alm1','itm1','itm2')
       result_code = result[0]
       result_msg  = result[1]
@@ -1266,7 +1266,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1',"itm1\ncontent1")
+      face.add_item('tax1','alm1','itm1\ncontent1')
       result = face.rename_item('tax1','alm1','itm1','itm%')
       result_code = result[0]
       result_msg  = result[1]
@@ -1281,16 +1281,16 @@ describe Item do
     face = Facade.instance
     face.add_taxonomy('tax1')
     face.add_album('tax1','alm1')
-    face.add_item('tax1','alm1',"itm1\ncontent1")
-    face.add_item('tax1','alm1',"itm2\ncontent2")
+    face.add_item('tax1','alm1','itm1\ncontent1')
+    face.add_item('tax1','alm1','itm2\ncontent2')
     face.add_album('tax1','alm2')
-    face.add_item('tax1','alm2',"itm2\ncontent2")
+    face.add_item('tax1','alm2','itm2\ncontent2')
     face.add_album('tax1','alm3')
     face.add_taxonomy('tax2')
     face.add_album('tax2','alm1')
-    face.add_item('tax2','alm1',"itm1\ncontent1")
+    face.add_item('tax2','alm1','itm1\ncontent1')
     face.add_album('tax2','alm2')
-    face.add_item('tax2','alm2',"itm2\ncontent2")
+    face.add_item('tax2','alm2','itm2\ncontent2')
     face.add_album('tax2','alm3')
     face.add_taxonomy('tax3')
     face.add_album('tax3','alm1')
@@ -1564,6 +1564,15 @@ describe Item do
         result_data = result[2]
         it "result_code" do expect(result_code).to eq(1) end
         it "result message" do expect(result_msg).to eq('count_items with name "itm1" failed: no taxonomies found') end
+        it "result data" do expect(result_data).to be_nil end
+      end
+      describe 'nothing specified' do
+        result = face.count_items(nil,nil,nil)
+        result_code = result[0]
+        result_msg  = result[1]
+        result_data = result[2]
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('count_items failed: no taxonomies found') end
         it "result data" do expect(result_data).to be_nil end
       end
     end

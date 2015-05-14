@@ -18,6 +18,15 @@ class Facade
     msg
   end
 
+  def wipe
+    begin
+      Tagm8Db.wipe
+      [0,'database wiped']
+    rescue => e
+      [1,"wipe failed: #{e}"]
+    end
+  end
+
   def add_taxonomy(taxonomy_name,dag='prevent')
     begin
       taxonomy_name = 'nil:NilClass' if taxonomy_name.nil?
@@ -443,7 +452,7 @@ class Facade
       tax = Taxonomy.get_by_name(taxonomy_name)
       raise "album \"#{album_name}\" not found in taxonomy \"#{taxonomy_name}\"" unless tax.has_album?(album_name)
       album = tax.get_album_by_name(album_name)
-      item_name,*rest = item.split("\n")
+      item_name,*rest = item.split('\n')
       item_name.gsub!(/\s/,'')
       raise "item \"#{item_name}\" taken by album \"#{album_name}\" in taxonomy \"#{taxonomy_name}\"" if album.has_item?(item_name)
       raise "item \"#{item_name}\" invalid - use alphanumeric and _ characters only" unless name_ok?(item_name)
@@ -546,6 +555,77 @@ class Facade
       [0,'',res]
     rescue => e
       [1,"count_items#{what} failed: #{e}"]
+    end
+  end
+
+  def list_items(taxonomy_name=nil,album_name=nil,item_name=nil,reverse=false,details=false)
+    begin
+      what = ''
+      what += " with name \"#{item_name}\"" unless item_name.nil?
+      what += " in album \"#{album_name}\"" unless album_name.nil?
+      what += " of taxonomy \"#{taxonomy_name}\"" unless taxonomy_name.nil?
+      raise 'album unspecified' if !album_name.nil? && album_name.empty?
+      raise 'item unspecified' if !item_name.nil? && item_name.empty?
+      if taxonomy_name.nil?
+        raise 'no taxonomies found' unless Taxonomy.exists?
+        unless Album.exists?(album_name)
+          raise 'no albums found' if album_name.nil?
+          raise "album \"#{album_name}\" not found"
+        end
+        albums = Album.get_by_name(album_name)
+      else
+        raise 'taxonomy unspecified' if taxonomy_name.empty?
+        raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+        tax = Taxonomy.get_by_name(taxonomy_name)
+        unless tax.has_album?(album_name)
+          album_name.nil? ? msg = 'no albums' : msg = "album \"#{album_name}\" not"
+          raise "#{msg} found in taxonomy \"#{taxonomy_name}\""
+        end
+        album_name.nil? ? albums = tax.albums : albums = [tax.get_album_by_name(album_name)]
+      end
+      puts "Facade.list_items 1:"
+      res = []
+      puts "Facade.list_items 2: albums=#{albums}"
+      albums.each do |album|
+        puts "Facade.list_items 2a: album.list_items(item_name)=#{album.list_items(item_name)}"
+        res += album.list_items(item_name)
+      end
+      item_count = res.size
+      puts "Facade.list_items 3:"
+      if item_name.nil?
+        res.sort!
+        res.reverse! if reverse
+      end
+      if details
+        item_name.nil? ? itm_name_max_size = res.max_by(&:length).size : itm_name_max_size = item_name.size
+        details,tax_name_max_size,alm_name_max_size,tag_count_max_size,i = [],0,0,0,0
+        puts "Facade.list_items 4:"
+        res.uniq.each do |item_name|
+          albums.each do |album|
+            if album.has_item?(item_name)
+              tax_name,alm_name,tag_count = album.taxonomy.name,album.name,album.get_item_by_name(item_name).tags.size
+              details[i] = [item_name,alm_name,tax_name,tag_count]
+              tax_name_max_size = tax_name.size if tax_name.size > tax_name_max_size
+              alm_name_max_size = alm_name.size if alm_name.size > alm_name_max_size
+              tag_count_max_size = tag_count/10+1 if tag_count/10+1 > tag_count_max_size
+              i += 1
+            end
+          end
+        end
+        res,i = [],0
+        puts "Facade.list_items 5:"
+        details.each do |detail|
+          if i%10 > 0
+            res[i] = "      %-#{itm_name_max_size}s            %-#{alm_name_max_size}s               %-#{tax_name_max_size}s      %#{tag_count_max_size}s     " % [detail[0],detail[1],detail[2],detail[3]]
+          else
+            res[i] = "item \"%-#{itm_name_max_size}s\" in album \"%-#{alm_name_max_size}s\" of taxonomy \"%-#{tax_name_max_size}s\" has %#{tag_count_max_size}s tags" % [detail[0],detail[1],detail[2],detail[3]]
+          end
+          i += 1
+        end
+      end
+      [0,grammar("#{item_count} items found#{what}")]+res
+    rescue => e
+      [1,"list_items#{what} failed: #{e}"]
     end
   end
 

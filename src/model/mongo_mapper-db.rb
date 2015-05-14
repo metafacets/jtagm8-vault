@@ -293,8 +293,11 @@ class PAlbum
     end
   end
 
-  def list_items
-    items.map {|item| item.name}
+  def list_items(name=nil)
+    # optional name parameter for Facade.list_items
+    res = items.map {|item| item.name}
+    res = res.select {|item_name| item_name == name} unless name.nil?
+    res
   end
 
 end

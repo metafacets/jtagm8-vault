@@ -96,10 +96,10 @@ class Item < PItem
 
   def parse_entry(entry)
     # extracts @name and @original_content
-    first, *rest = entry.split("\n")
+    first, *rest = entry.strip.split("\n") # preserve item content internal whitespace
     Debug.show(class:self.class,method:__method__,note:'1',vars:[['first',first],['rest',rest]])
     if first
-      self.name = first
+      self.name = first.strip              # strip name trailing whitespace
       self.original_name = first if self.original_name.nil?
       Debug.show(class:self.class,method:__method__,note:'2',vars:[['name',name],['rest',rest]])
     end

@@ -453,11 +453,11 @@ class Facade
       raise "album \"#{album_name}\" not found in taxonomy \"#{taxonomy_name}\"" unless tax.has_album?(album_name)
       album = tax.get_album_by_name(album_name)
       item_name,*rest = item.split('\n')
-      item_name.gsub!(/\s/,'')
+      item_name.strip!
       raise "item \"#{item_name}\" taken by album \"#{album_name}\" in taxonomy \"#{taxonomy_name}\"" if album.has_item?(item_name)
       raise "item \"#{item_name}\" invalid - use alphanumeric and _ characters only" unless name_ok?(item_name)
       items_added = Item.count
-      item = album.add_item("#{item_name}\n"+rest.join("\n"))
+      item = album.add_item("#{item_name}\n#{rest.join("\n")}")
       items_added = Item.count - items_added
       raise 'No items were added' if items_added == 0
       [0,"Item \"#{item.name}\" added to album \"#{album_name}\" in taxonomy \"#{taxonomy_name}\""]

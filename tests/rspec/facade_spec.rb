@@ -714,6 +714,30 @@ describe Item do
       it "itm1 content correct" do expect(itm1_content).to eq("#tag1,tag2\ncontent line 1\ncontent line 2") end
       it "tax1 tags added OK" do expect(tax1_tags).to eq(['tag1','tag2']) end
     end
+    describe 'name ok, stripping test' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      result = face.add_item('tax1','alm1','  itm1 \n#tag1,tag2 \n content line 1 \n content line 2 \n \n')
+      result_code = result[0]
+      result_msg  = result[1]
+      result_data = result[2]
+      items = Item.list.sort
+      alm1_items = Album.get_by_name('alm1').first.list_items.sort
+      itm1 = Item.get_by_name('itm1').first
+      itm1_name = itm1.name
+      itm1_content = itm1.get_content
+      tax1_tags = Taxonomy.get_by_name('tax1').list_tags.sort
+      it "result_code" do expect(result_code).to eq(0) end
+      it "result message" do expect(result_msg).to eq('Item "itm1" added to album "alm1" in taxonomy "tax1"') end
+      it "result data" do expect(result_data).to be_nil end
+      it "items added OK" do expect(items).to eq(['itm1']) end
+      it "alm1 items added OK" do expect(alm1_items).to eq(['itm1']) end
+      it "itm1 name correct" do expect(itm1_name).to eq('itm1') end
+      it "itm1 content correct" do expect(itm1_content).to eq("#tag1,tag2 \n content line 1 \n content line 2") end
+      it "tax1 tags added OK" do expect(tax1_tags).to eq(['tag1','tag2']) end
+    end
     describe 'taxonomy unspecified' do
       Tagm8Db.wipe
       face = Facade.instance

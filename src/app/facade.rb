@@ -10,11 +10,11 @@ class Facade
   def grammar(msg)
     # convert nouns from plural to singular form excluding 'n of m' groups
     # hyphonate adjectives to nouns eg. 5 folksonomy_tags
-    msg.gsub!(/((?<!\sof\s)1\s)([a-zA-Z"][a-z_"]+)(ies)(\b)/,'\1\2y\4')
-    msg.gsub!(/((?<!\sof\s)1\s)([a-zA-Z"][a-z_"]+)(s)(\b)/,'\1\2\4')
+    msg.gsub!(/((?<!\sof\s|[1-9])1\s)([a-zA-Z"][a-z_"]+)(ies)(\b)/,'\1\2y\4')
+    msg.gsub!(/((?<!\sof\s|[1-9])1\s)([a-zA-Z"][a-z_"]+)(s)(\b)/,'\1\2\4')
     msg.gsub!(/(.*)(_)(.*)/,'\1 \3')
     # convert 0 to no excluding 'n of m' groups
-    msg.gsub!(/((?<!\sof\s)0\s(?!of\s))([a-zA-Z][a-z]+\b)/,'no \2')
+    msg.gsub!(/((?<!\sof\s|[1-9])0\s(?!of\s))([a-zA-Z][a-z]+\b)/,'no \2')
     msg
   end
 

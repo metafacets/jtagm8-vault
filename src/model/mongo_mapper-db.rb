@@ -147,8 +147,10 @@ class PTaxonomy
     end
   end
 
-  def list_albums
-    albums.map {|alm| alm.name}
+  def list_albums(name=nil)
+    res = albums.map {|album| album.name}
+    res = res.select {|album_name| album_name == name} unless name.nil?
+    res
   end
 
   def get_album_by_name(name)

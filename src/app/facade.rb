@@ -592,37 +592,39 @@ class Facade
       end
       item_count = res.size
       puts "Facade.list_items 3:"
-      if item_name.nil?
-        res.sort!
-        res.reverse! if reverse
-      end
-      if details || content
-        item_name.nil? ? itm_name_max_size = res.max_by(&:length).size : itm_name_max_size = item_name.size
-        details,tax_name_max_size,alm_name_max_size,tag_count_max_size,i = [],0,0,0,0
-        puts "Facade.list_items 4:"
-        res.uniq.each do |item_name|
-          albums.each do |album|
-            if album.has_item?(item_name)
-              item = album.get_item_by_name(item_name)
-              tax_name,alm_name,tag_count = album.taxonomy.name,album.name,item.tags.size
-              details[i] = [item_name,alm_name,tax_name,tag_count,item]
-              tax_name_max_size = tax_name.size if tax_name.size > tax_name_max_size
-              alm_name_max_size = alm_name.size if alm_name.size > alm_name_max_size
-              tag_count_max_size = tag_count/10+1 if tag_count/10+1 > tag_count_max_size
-              i += 1
+      unless res.empty?
+        if item_name.nil?
+          res.sort!
+          res.reverse! if reverse
+        end
+        if details || content
+          item_name.nil? ? itm_name_max_size = res.max_by(&:length).size : itm_name_max_size = item_name.size
+          details,tax_name_max_size,alm_name_max_size,tag_count_max_size,i = [],0,0,0,0
+          puts "Facade.list_items 4:"
+          res.uniq.each do |item_name|
+            albums.each do |album|
+              if album.has_item?(item_name)
+                item = album.get_item_by_name(item_name)
+                tax_name,alm_name,tag_count = album.taxonomy.name,album.name,item.tags.size
+                details[i] = [item_name,alm_name,tax_name,tag_count,item]
+                tax_name_max_size = tax_name.size if tax_name.size > tax_name_max_size
+                alm_name_max_size = alm_name.size if alm_name.size > alm_name_max_size
+                tag_count_max_size = tag_count/10+1 if tag_count/10+1 > tag_count_max_size
+                i += 1
+              end
             end
           end
-        end
-        res,i = [],0
-        puts "Facade.list_items 5:"
-        details.each do |detail|
-          if i%10 == 0 || content
-            res[i] = "item \"%-#{itm_name_max_size}s\" in album \"%-#{alm_name_max_size}s\" of taxonomy \"%-#{tax_name_max_size}s\" has %#{tag_count_max_size}s tags" % [detail[0],detail[1],detail[2],detail[3]]
-            res[i] += ":\n\n#{detail[4].get_content}\n\n" if content
-          else
-            res[i] = "      %-#{itm_name_max_size}s            %-#{alm_name_max_size}s               %-#{tax_name_max_size}s      %#{tag_count_max_size}s     " % [detail[0],detail[1],detail[2],detail[3]]
+          res,i = [],0
+          puts "Facade.list_items 5:"
+          details.each do |detail|
+            if i%10 == 0 || content
+              res[i] = "item \"%-#{itm_name_max_size}s\" in album \"%-#{alm_name_max_size}s\" of taxonomy \"%-#{tax_name_max_size}s\" has %#{tag_count_max_size}s tags" % [detail[0],detail[1],detail[2],detail[3]]
+              res[i] += ":\n\n#{detail[4].get_content}\n\n" if content
+            else
+              res[i] = "      %-#{itm_name_max_size}s            %-#{alm_name_max_size}s               %-#{tax_name_max_size}s      %#{tag_count_max_size}s     " % [detail[0],detail[1],detail[2],detail[3]]
+            end
+            i += 1
           end
-          i += 1
         end
       end
       [0,grammar("#{item_count} items found#{what}")]+res

@@ -369,65 +369,6 @@ class Facade
     end
   end
 
-  def list_albums(taxonomy_name=nil,album_name=nil,reverse=false,details=false)
-    begin
-      raise 'taxonomy unspecified' if !taxonomy_name.nil? && taxonomy_name.empty?
-      raise 'album unspecified' if !album_name.nil? && album_name.empty?
-      if taxonomy_name.nil?
-        res = Album.list
-        raise "No albums exist" if res.empty?
-        t_insert = ' %s (taxonomy)'
-        in_taxonomy = ''
-      else
-        raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-        tax = Taxonomy.get_by_name(taxonomy_name)
-        res = tax.list_albums
-        t_insert = ''
-        in_taxonomy = " in taxonomy \"#{taxonomy_name}\""
-      end
-      if album_name.nil?
-        with_name = ''
-      else
-        res = res.select{|r| r == album_name}
-        with_name = " with name \"#{album_name}\""
-      end
-      item_details = ''
-      album_total = "#{res.size} albums"
-      unless res.empty?
-        res.sort!
-        res.reverse! if reverse
-        if details
-          longest = res.max_by(&:length).size
-          item_total = 0
-          taxonomies = []
-          i = 0
-          res.each do |name|
-            taxonomy_name.nil? ? albums = Album.get_by_name(name) : albums = [tax.get_album_by_name(name)]
-            albums = albums.sort_by{|album| album.taxonomy.name}
-            albums.reverse! if reverse
-            albums.each do |album|
-              item_count = album.count_items
-              item_total += item_count
-              taxonomy_name.nil? ? t_name = album.taxonomy.name : t_name = ''
-              taxonomies |= [t_name]
-              if i%10 > 0
-                res[i] = "%-#{longest}s %4s      #{t_insert[0..2]}" % [name,item_count,t_name]
-              else
-                res[i] = "%-#{longest}s %4s items#{t_insert}" % [name,item_count,t_name]
-              end
-              i += 1
-            end
-          end
-          item_details = " containing #{item_total} items"
-          in_taxonomy = " in #{taxonomies.size} taxonomies" if taxonomy_name.nil?
-        end
-      end
-      [0,grammar("#{album_total}#{with_name} found#{in_taxonomy}#{item_details}")] + res
-    rescue => e
-      [1,"list_albums failed: #{e}"]
-    end
-  end
-
   def count_albums(taxonomy_name=nil,album_name=nil)
     begin
       raise 'taxonomy unspecified' if !taxonomy_name.nil? && taxonomy_name.empty?
@@ -437,6 +378,59 @@ class Facade
       [0,'',res]
     rescue => e
       [1,"count_tags failed: #{e}"]
+    end
+  end
+
+  def list_albums(taxonomy_name=nil,album_name=nil,reverse=false,details=false)
+    begin
+      what = ''
+      what += " with name \"#{album_name}\"" unless album_name.nil?
+      what += " in taxonomy \"#{taxonomy_name}\"" unless taxonomy_name.nil?
+      raise 'album unspecified' if !album_name.nil? && album_name.empty?
+      if taxonomy_name.nil?
+        raise 'no taxonomies found' unless Taxonomy.exists?
+        albums = Album.get_by_name(album_name)
+      else
+        raise 'taxonomy unspecified' if taxonomy_name.empty?
+        raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+        tax = Taxonomy.get_by_name(taxonomy_name)
+        album_name.nil? ? albums = tax.albums : albums = [tax.get_album_by_name(album_name)]
+      end
+#      puts "Facade.list_albums 1: taxonomy_name=#{taxonomy_name}, album_name=#{album_name}"
+      res = albums.map{|album| [album.name,album]}
+      res_count = res.size
+#      puts "Facade.list_albums 1: res_count=#{res_count}"
+      unless res.empty?
+        if album_name.nil?
+          res.sort_by!(&:first)
+          res.reverse! if reverse
+        end
+        if details
+          details,alm_name_max_size,tax_name_max_size,itm_count_max_size,i = [],0,0,0,0
+          res.each do |alm_name,album|
+            tax_name,itm_count = album.taxonomy.name,album.items.size
+            details[i] = [alm_name,tax_name,itm_count]
+            tax_name_max_size = tax_name.size if tax_name.size > tax_name_max_size
+            alm_name_max_size = alm_name.size if alm_name.size > alm_name_max_size
+            itm_count_max_size = itm_count/10+1 if itm_count/10+1 > itm_count_max_size
+            i += 1
+          end
+          res,i = [],0
+          details.each do |detail|
+            if i%10 == 0
+              res[i] = "album \"%-#{alm_name_max_size}s\" in taxonomy \"%-#{tax_name_max_size}s\" has %#{itm_count_max_size}s items" % [detail[0],detail[1],detail[2]]
+            else
+              res[i] = "       %-#{alm_name_max_size}s               %-#{tax_name_max_size}s      %#{itm_count_max_size}s      " % [detail[0],detail[1],detail[2]]
+            end
+            i += 1
+          end
+        else
+          res.map!{|row| row[0]}
+        end
+      end
+      [0,grammar("#{res_count} albums found#{what}")]+res
+    rescue => e
+      [1,"list_albums#{what} failed: #{e}"]
     end
   end
 
@@ -583,39 +577,31 @@ class Facade
         end
         album_name.nil? ? albums = tax.albums : albums = [tax.get_album_by_name(album_name)]
       end
-      puts "Facade.list_items 1:"
       res = []
-      puts "Facade.list_items 2: albums=#{albums}"
       albums.each do |album|
-        puts "Facade.list_items 2a: album.list_items(item_name)=#{album.list_items(item_name)}"
-        res += album.list_items(item_name)
+        if album.has_item?(item_name)
+          item_name.nil? ? res += album.items : res += [album.get_item_by_name(item_name)]
+        end
       end
-      item_count = res.size
-      puts "Facade.list_items 3:"
+      res_count = res.size
       unless res.empty?
+        res.map!{|item| [item.name,item]}
         if item_name.nil?
-          res.sort!
+          res.sort_by!(&:first)
           res.reverse! if reverse
         end
         if details || content
-          item_name.nil? ? itm_name_max_size = res.max_by(&:length).size : itm_name_max_size = item_name.size
-          details,tax_name_max_size,alm_name_max_size,tag_count_max_size,i = [],0,0,0,0
-          puts "Facade.list_items 4:"
-          res.uniq.each do |item_name|
-            albums.each do |album|
-              if album.has_item?(item_name)
-                item = album.get_item_by_name(item_name)
-                tax_name,alm_name,tag_count = album.taxonomy.name,album.name,item.tags.size
-                details[i] = [item_name,alm_name,tax_name,tag_count,item]
-                tax_name_max_size = tax_name.size if tax_name.size > tax_name_max_size
-                alm_name_max_size = alm_name.size if alm_name.size > alm_name_max_size
-                tag_count_max_size = tag_count/10+1 if tag_count/10+1 > tag_count_max_size
-                i += 1
-              end
-            end
+          details,itm_name_max_size,tax_name_max_size,alm_name_max_size,tag_count_max_size,i = [],0,0,0,0,0
+          res.each do |itm_name,item|
+            alm_name,tax_name,tag_count = item.album.name,item.album.taxonomy.name,item.tags.size
+            details[i] = [itm_name,alm_name,tax_name,tag_count,item]
+            itm_name_max_size = itm_name.size if itm_name.size > itm_name_max_size
+            alm_name_max_size = alm_name.size if alm_name.size > alm_name_max_size
+            tax_name_max_size = tax_name.size if tax_name.size > tax_name_max_size
+            tag_count_max_size = tag_count/10+1 if tag_count/10+1 > tag_count_max_size
+            i += 1
           end
           res,i = [],0
-          puts "Facade.list_items 5:"
           details.each do |detail|
             if i%10 == 0 || content
               res[i] = "item \"%-#{itm_name_max_size}s\" in album \"%-#{alm_name_max_size}s\" of taxonomy \"%-#{tax_name_max_size}s\" has %#{tag_count_max_size}s tags" % [detail[0],detail[1],detail[2],detail[3]]
@@ -625,9 +611,11 @@ class Facade
             end
             i += 1
           end
+        else
+          res.map!{|row| row[0]}
         end
       end
-      [0,grammar("#{item_count} items found#{what}")]+res
+      [0,grammar("#{res_count} items found#{what}")]+res
     rescue => e
       [1,"list_items#{what} failed: #{e}"]
     end

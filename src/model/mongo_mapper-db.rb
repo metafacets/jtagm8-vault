@@ -279,8 +279,10 @@ class PAlbum
     name.nil? ? PAlbum.all : PAlbum.where(name:name.to_s).all
   end
 
-  def self.list
-    PAlbum.all.map {|alm| alm.name}
+  def self.list(name=nil)
+    res = PAlbum.all.map {|alm| alm.name}
+    res = res.select {|album_name| album_name == name} unless name.nil?
+    res
   end
 
   def get_item_by_name(name)

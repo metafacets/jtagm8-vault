@@ -103,10 +103,11 @@ desc 'List Taxonomies'
 long_desc 'List Taxonomies within the current database'
 # arg_name 'taxonomy-name'
 command :list_taxonomies do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name'
   c.switch [:r,:reverse], desc:'reverse sort alphabetically'
   c.switch [:d,:details], desc:'list details'
   c.action do |_,options,_|
-    show(facade.list_taxonomies(options[:reverse],options[:details]))
+    show(facade.list_taxonomies(options[:taxonomy],options[:reverse],options[:details]))
   end
 end
 

@@ -85,26 +85,41 @@ class Facade
     end
   end
 
-  def list_taxonomies(reverse=false,details=false)
+  def list_taxonomies(taxonomy_name=nil,reverse=false,details=false)
     begin
-      c = Taxonomy.count
-      raise "No taxonomies exist" if c < 1
-      res = Taxonomy.list.sort
-      res.reverse! if reverse
-      if details
-        longest = res.max_by(&:length).size
-        res.each_with_index do |name,i|
-          tax = Taxonomy.get_by_name(name)
-          if i%10 > 0
-            res[i] = "%-#{longest}s %-8s %3s      %2s       %3s       %5s links %2s       " % [name,tax.dag,tax.count_tags,tax.count_roots,tax.count_folksonomies,tax.count_links,tax.count_albums]
-          else
-            res[i] = "%-#{longest}s %-8s %3s tags %2s roots %3s folks %5s links %2s albums" % [name,tax.dag,tax.count_tags,tax.count_roots,tax.count_folksonomies,tax.count_links,tax.count_albums]
+      what = ''
+      what += " with name \"#{taxonomy_name}\"" unless taxonomy_name.nil?
+      raise 'taxonomy unspecified' if !taxonomy_name.nil? && taxonomy_name.empty?
+      res = Taxonomy.list(taxonomy_name).sort
+      res_count = res.size
+      unless res.empty?
+        res.reverse! if reverse && taxonomy_name.nil?
+        if details
+          details,tax_name_length,tax_dag_length,tag_count_length,root_count_length,folk_count_length,link_count_length,alm_count_length = [],res.max_by(&:length).size,0,0,0,0,0,0
+          res.each_with_index do |tax_name,i|
+            tax = Taxonomy.get_by_name(tax_name)
+            tax_dag,tag_count,root_count,folk_count,link_count,alm_count = tax.dag,tax.count_tags,tax.count_roots,tax.count_folksonomies,tax.count_links,tax.count_albums
+            details[i] = [tax_name,tax_dag,tag_count,root_count,folk_count,link_count,alm_count]
+            tax_dag_length    = tax_dag.size    if tax_dag.size    > tax_dag_length
+            tag_count_length  = tag_count/10+1  if tag_count/10+1  > tag_count_length
+            root_count_length = root_count/10+1 if root_count/10+1 > root_count_length
+            folk_count_length = folk_count/10+1 if folk_count/10+1 > folk_count_length
+            link_count_length = link_count/10+1 if link_count/10+1 > link_count_length
+            alm_count_length  = alm_count/10+1  if alm_count/10+1  > alm_count_length
+          end
+          res = []
+          details.each_with_index do |detail,i|
+            if i%10 > 0
+              res[i] = "          %-#{tax_name_length}s       %-#{tax_dag_length}s     %#{tag_count_length}s       %#{root_count_length}s        %#{folk_count_length}s        %#{link_count_length}s           %#{alm_count_length}s        " % [detail[0],detail[1],detail[2],detail[3],detail[4],detail[5],detail[6]]
+            else
+              res[i] = "taxonomy \"%-#{tax_name_length}s\" DAG: %-#{tax_dag_length}s has %#{tag_count_length}s tags, %#{root_count_length}s roots, %#{folk_count_length}s folks, %#{link_count_length}s links and %#{alm_count_length}s albums" % [detail[0],detail[1],detail[2],detail[3],detail[4],detail[5],detail[6]]
+            end
           end
         end
       end
-      [0,grammar("#{c} taxonomies found")] + res
+      [0,grammar("#{res_count} taxonomies found#{what}")] + res
     rescue => e
-      [1,"list_taxonomies failed: #{e}"]
+      [1,"list_taxonomies#{what} failed: #{e}"]
     end
   end
 
@@ -415,14 +430,13 @@ class Facade
             itm_count_max_size = itm_count/10+1 if itm_count/10+1 > itm_count_max_size
             i += 1
           end
-          res,i = [],0
-          details.each do |detail|
+          res = []
+          details.each_with_index do |detail,i|
             if i%10 == 0
               res[i] = "album \"%-#{alm_name_max_size}s\" in taxonomy \"%-#{tax_name_max_size}s\" has %#{itm_count_max_size}s items" % [detail[0],detail[1],detail[2]]
             else
               res[i] = "       %-#{alm_name_max_size}s               %-#{tax_name_max_size}s      %#{itm_count_max_size}s      " % [detail[0],detail[1],detail[2]]
             end
-            i += 1
           end
         else
           res.map!{|row| row[0]}
@@ -601,15 +615,14 @@ class Facade
             tag_count_max_size = tag_count/10+1 if tag_count/10+1 > tag_count_max_size
             i += 1
           end
-          res,i = [],0
-          details.each do |detail|
+          res = []
+          details.each_with_index do |detail,i|
             if i%10 == 0 || content
               res[i] = "item \"%-#{itm_name_max_size}s\" in album \"%-#{alm_name_max_size}s\" of taxonomy \"%-#{tax_name_max_size}s\" has %#{tag_count_max_size}s tags" % [detail[0],detail[1],detail[2],detail[3]]
               res[i] += ":\n\n#{detail[4].get_content}\n\n" if content
             else
               res[i] = "      %-#{itm_name_max_size}s            %-#{alm_name_max_size}s               %-#{tax_name_max_size}s      %#{tag_count_max_size}s     " % [detail[0],detail[1],detail[2],detail[3]]
             end
-            i += 1
           end
         else
           res.map!{|row| row[0]}

@@ -39,8 +39,10 @@ class PTaxonomy
     PTaxonomy.first(name:name)
   end
 
-  def self.list
-    PTaxonomy.all.map {|tax| tax.name}
+  def self.list(name=nil)
+    res = PTaxonomy.all.map {|tax| tax.name}
+    res = res.select {|tax_name| tax_name == name} unless name.nil?
+    res
   end
 
   def list_tags_by_id(ids)

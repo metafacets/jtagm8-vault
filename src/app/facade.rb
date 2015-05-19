@@ -403,7 +403,7 @@ class Facade
       else
         raise 'taxonomy unspecified' if taxonomy_name.empty?
         raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-        res = Taxonomy.get_by_name(taxonomy_name)..count_albums(album_name)
+        res = Taxonomy.get_by_name(taxonomy_name).count_albums(album_name)
       end
       [0,'',res]
     rescue => e

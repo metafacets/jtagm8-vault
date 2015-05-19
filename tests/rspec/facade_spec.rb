@@ -295,6 +295,40 @@ describe Taxonomy do
       it "result data" do expect(result_data).to be_nil end
     end
   end
+  describe :count_taxonomies do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_taxonomy('tax2')
+    describe 'taxonomy specified' do
+      describe '1 found' do
+        result_code,result_msg,*result_data = face.count_taxonomies('tax1')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq([1]) end
+      end
+      describe 'none found' do
+        result_code,result_msg,*result_data = face.count_taxonomies('tax3')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq([0]) end
+      end
+    end
+    describe 'nothing specified' do
+      describe '2 found' do
+        result_code,result_msg,*result_data = face.count_taxonomies
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq([2]) end
+      end
+    end
+    describe 'taxonomy unspecified' do
+      result_code,result_msg,*result_data = face.count_taxonomies('')
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('count_taxonomies with name "" failed: taxonomy unspecified') end
+      it "result data" do expect(result_data).to eq([]) end
+    end
+  end
 end
 describe Album do
   describe :add_album do

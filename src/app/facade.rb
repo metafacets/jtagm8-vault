@@ -85,6 +85,17 @@ class Facade
     end
   end
 
+  def count_taxonomies(taxonomy_name=nil)
+    begin
+      what = ''
+      what += " with name \"#{taxonomy_name}\"" unless taxonomy_name.nil?
+      raise 'taxonomy unspecified' if !taxonomy_name.nil? && taxonomy_name.empty?
+      [0,'',Taxonomy.count_by_name(taxonomy_name)]
+    rescue => e
+      [1,"count_taxonomies#{what} failed: #{e}"]
+    end
+  end
+
   def list_taxonomies(taxonomy_name=nil,reverse=false,details=false)
     begin
       what = ''
@@ -121,10 +132,6 @@ class Facade
     rescue => e
       [1,"list_taxonomies#{what} failed: #{e}"]
     end
-  end
-
-  def count_taxonomies
-    [0,'',Taxonomy.count]
   end
 
   def has_taxonomy?(name)
@@ -386,13 +393,21 @@ class Facade
 
   def count_albums(taxonomy_name=nil,album_name=nil)
     begin
-      raise 'taxonomy unspecified' if !taxonomy_name.nil? && taxonomy_name.empty?
+      what = ''
+      what += " with name \"#{album_name}\"" unless album_name.nil?
+      what += " in taxonomy \"#{taxonomy_name}\"" unless taxonomy_name.nil?
       raise 'album unspecified' if !album_name.nil? && album_name.empty?
-      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-      taxonomy_name.nil? ? res = Album.count_by_name(album_name) : res = Taxonomy.get_by_name(taxonomy_name).count_albums(album_name)
+      if taxonomy_name.nil?
+        raise 'no taxonomies found' unless Taxonomy.exists?
+        res = Album.count_by_name(album_name)
+      else
+        raise 'taxonomy unspecified' if taxonomy_name.empty?
+        raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+        res = Taxonomy.get_by_name(taxonomy_name)..count_albums(album_name)
+      end
       [0,'',res]
     rescue => e
-      [1,"count_tags failed: #{e}"]
+      [1,"count_albums#{what} failed: #{e}"]
     end
   end
 

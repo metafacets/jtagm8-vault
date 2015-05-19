@@ -99,6 +99,16 @@ command :dag_false do |c|
   end
 end
 
+desc 'Count Taxonomies'
+long_desc 'Count Taxonomies within the current database'
+# arg_name 'taxonomy-name'
+command :count_taxonomies do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name'
+  c.action do |_,options,_|
+    show(facade.count_taxonomies(options[:taxonomy]))
+  end
+end
+
 desc 'List Taxonomies'
 long_desc 'List Taxonomies within the current database'
 # arg_name 'taxonomy-name'
@@ -108,15 +118,6 @@ command :list_taxonomies do |c|
   c.switch [:d,:details], desc:'list details'
   c.action do |_,options,_|
     show(facade.list_taxonomies(options[:taxonomy],options[:reverse],options[:details]))
-  end
-end
-
-desc 'Count Taxonomies'
-long_desc 'Count Taxonomies within the current database'
-# arg_name 'taxonomy-name'
-command :count_taxonomies do |c|
-  c.action do |global_options,options,args|
-    show(facade.count_taxonomies)
   end
 end
 
@@ -284,6 +285,17 @@ command :delete_albums do |c|
   end
 end
 
+desc 'Count albums'
+long_desc 'Count albums optionally by name or within a taxonomy'
+#arg_name 'Describe arguments to create here'
+command :count_albums do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name'
+  c.flag [:a,:album], desc:'album name'
+  c.action do |_,options,_|
+    show(facade.count_albums(options[:taxonomy],options[:album]))
+  end
+end
+
 desc 'List albums'
 long_desc 'Lists albums optionally within a taxonomy or by name and with details'
 #arg_name 'Describe arguments to create here'
@@ -294,17 +306,6 @@ command :list_albums do |c|
   c.switch [:r,:reverse], desc:'reverse sort alphabetically'
   c.action do |_,options,_|
     show(facade.list_albums(options[:taxonomy],options[:album],options[:reverse],options[:details]))
-  end
-end
-
-desc 'Count albums'
-long_desc 'Count albums optionally by name or within a taxonomy'
-#arg_name 'Describe arguments to create here'
-command :count_albums do |c|
-  c.flag [:t,:taxonomy], desc:'taxonomy name'
-  c.flag [:a,:album], desc:'album name'
-  c.action do |_,options,_|
-    show(facade.count_albums(options[:taxonomy],options[:album]))
   end
 end
 

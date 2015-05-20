@@ -424,12 +424,16 @@ class Facade
         raise 'taxonomy unspecified' if taxonomy_name.empty?
         raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
         tax = Taxonomy.get_by_name(taxonomy_name)
-        album_name.nil? ? albums = tax.albums : albums = [tax.get_album_by_name(album_name)]
+        albums = []
+        if album_name.nil?
+          albums = tax.albums
+        else
+          album = tax.get_album_by_name(album_name)
+          albums += [album] unless album.nil?
+        end
       end
-#      puts "Facade.list_albums 1: taxonomy_name=#{taxonomy_name}, album_name=#{album_name}"
       res = albums.map{|album| [album.name,album]}
       res_count = res.size
-#      puts "Facade.list_albums 1: res_count=#{res_count}"
       unless res.empty?
         if album_name.nil?
           res.sort_by!(&:first)

@@ -823,6 +823,159 @@ describe Album do
       end
     end
   end
+  describe :list_albums do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_album('tax1','alm1')
+    face.add_item('tax1','alm1','itm1\ncontent1')
+    face.add_item('tax1','alm1','itm2\ncontent2')
+    face.add_album('tax1','alm2')
+    face.add_taxonomy('tax2')
+    face.add_album('tax2','alm1')
+    face.add_taxonomy('tax3')
+    describe 'taxonomy, album specified' do
+      describe '1 found' do
+        result_code,result_msg,*result_data = face.list_albums('tax1','alm1')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('1 album found with name "alm1" in taxonomy "tax1"') end
+        it "result data" do expect(result_data).to eq(['alm1']) end
+      end
+      describe 'none found' do
+        result_code,result_msg,*result_data = face.list_albums('tax1','alm3')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('no albums found with name "alm3" in taxonomy "tax1"') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+    end
+    describe 'taxonomy specified with[out] reverse|details' do
+      describe '2 found' do
+        result_code,result_msg,*result_data = face.list_albums('tax1')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('2 albums found in taxonomy "tax1"') end
+        it "result data" do expect(result_data).to eq(['alm1','alm2']) end
+      end
+      describe '2 found reversed' do
+        result_code,result_msg,*result_data = face.list_albums('tax1',nil,true)
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('2 albums found in taxonomy "tax1"') end
+        it "result data" do expect(result_data).to eq(['alm2','alm1']) end
+      end
+      describe '2 found with details' do
+        result_code,result_msg,*result_data = face.list_albums('tax1',nil,false,true)
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('2 albums found in taxonomy "tax1"') end
+        it "result data" do expect(result_data).to eq(['album "alm1" in taxonomy "tax1" has 2 items','       alm2               tax1      0      ']) end
+      end
+      describe '2 found reversed with details' do
+        result_code,result_msg,*result_data = face.list_albums('tax1',nil,true,true)
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('2 albums found in taxonomy "tax1"') end
+        it "result data" do expect(result_data).to eq(['album "alm2" in taxonomy "tax1" has 0 items','       alm1               tax1      2      ']) end
+      end
+    end
+    describe 'album specified, details' do
+      describe '2 found' do
+        result_code,result_msg,*result_data = face.list_albums(nil,'alm1',nil,true)
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('2 albums found with name "alm1"') end
+        it "result data" do expect(result_data).to eq(['album "alm1" in taxonomy "tax1" has 2 items','       alm1               tax2      0      ']) end
+      end
+      describe 'none found' do
+        result_code,result_msg,*result_data = face.list_albums(nil,'alm3')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('no albums found with name "alm3"') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+    end
+    describe 'nothing specified' do
+      describe '3 found' do
+        result_code,result_msg,*result_data = face.list_albums
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('3 albums found') end
+        it "result data" do expect(result_data).to eq(['alm1','alm1','alm2']) end
+      end
+      describe '3 found with details' do
+        result_code,result_msg,*result_data = face.list_albums(nil,nil,nil,true)
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('3 albums found') end
+        it "result data" do expect(result_data).to eq(['album "alm1" in taxonomy "tax1" has 2 items','       alm1               tax2      0      ','       alm2               tax1      0      ']) end
+      end
+      describe '3 found reversed with details' do
+        result_code,result_msg,*result_data = face.list_albums(nil,nil,true,true)
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('3 albums found') end
+        it "result data" do expect(result_data).to eq(['album "alm2" in taxonomy "tax1" has 0 items','       alm1               tax2      0      ','       alm1               tax1      2      ']) end
+      end
+    end
+    describe 'taxonomy unspecified' do
+      result_code,result_msg,*result_data = face.list_albums('','alm1')
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('list_albums with name "alm1" in taxonomy "" failed: taxonomy unspecified') end
+      it "result data" do expect(result_data).to eq([]) end
+    end
+    describe 'taxonomy not found, various error location msgs' do
+      describe 'taxonomy, album specified' do
+        result_code,result_msg,*result_data = face.list_albums('tax5','alm1')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('list_albums with name "alm1" in taxonomy "tax5" failed: taxonomy "tax5" not found') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'taxonomy specified' do
+        result_code,result_msg,*result_data = face.list_albums('tax5')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('list_albums in taxonomy "tax5" failed: taxonomy "tax5" not found') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+    end
+    describe 'album unspecified' do
+      result_code,result_msg,*result_data = face.list_albums('tax1','')
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('list_albums with name "" in taxonomy "tax1" failed: album unspecified') end
+      it "result data" do expect(result_data).to eq([]) end
+    end
+    describe 'no taxonomies found, various locations for error msg' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      describe 'album specified' do
+        result_code,result_msg,*result_data = face.list_albums(nil,'alm1')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('list_albums with name "alm1" failed: no taxonomies found') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'nothing specified' do
+        result_code,result_msg,*result_data = face.list_albums
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('list_albums failed: no taxonomies found') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+    end
+    describe 'details 11 results' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm01')
+      face.add_item('tax1','alm01','itm1\ncontent1')
+      face.add_item('tax1','alm01','itm2\ncontent2')
+      face.add_item('tax1','alm01','itm3\ncontent1')
+      face.add_album('tax1','alm02')
+      face.add_album('tax1','alm03')
+      face.add_item('tax1','alm03','itm4\ncontent2')
+      face.add_item('tax1','alm03','itm5\ncontent1')
+      face.add_album('tax1','alm04')
+      face.add_album('tax1','alm05')
+      face.add_album('tax1','alm06')
+      face.add_album('tax1','alm07')
+      face.add_album('tax1','alm08')
+      face.add_album('tax1','alm09')
+      face.add_album('tax1','alm10')
+      face.add_album('tax1','alm11')
+      result_code,result_msg,*result_data = face.list_albums(nil,nil,nil,true)
+      it "result_code" do expect(result_code).to eq(0) end
+      it "result message" do expect(result_msg).to eq('11 albums found') end
+      it "result data" do expect(result_data).to eq(['album "alm01" in taxonomy "tax1" has 3 items','       alm02               tax1      0      ','       alm03               tax1      2      ','       alm04               tax1      0      ','       alm05               tax1      0      ','       alm06               tax1      0      ','       alm07               tax1      0      ','       alm08               tax1      0      ','       alm09               tax1      0      ','       alm10               tax1      0      ','album "alm11" in taxonomy "tax1" has 0 items']) end
+    end
+  end
 end
 describe Item do
   describe :add_item do

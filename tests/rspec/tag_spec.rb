@@ -867,6 +867,30 @@ describe 'Taxonomy' do
         end
       end
     end
+    describe 'hierarchy pair plus folk' do
+      ['[:a>:b],:c',':a>:b,:c','[:b<:a],:c',':b<:a,:c'].each do |ddl|
+        describe ddl do
+          before(:all) do
+            Tagm8Db.wipe
+            @tax = Taxonomy.new
+            @tax.set_dag('prevent')
+            @tax.instantiate(ddl)
+            @a =@tax.get_tag_by_name(:a)
+            @b =@tax.get_tag_by_name(:b)
+            @c =@tax.get_tag_by_name(:c)
+          end
+          it 'taxonomy has 3 tags' do expect(@tax.count_tags).to eq(3) end
+          it 'has 1 root' do expect(@tax.count_roots).to eq(1) end
+          it 'has 1 folk' do expect(@tax.count_folksonomies).to eq(1) end
+          it ':a is root' do expect(@a).to be_root end
+          it ':a has no parent' do expect(@a).to_not have_parent end
+          it ':a has child' do expect(@a).to have_child end
+          it ':b has parent' do expect(@b).to have_parent end
+          it ':b has no child' do expect(@b).to_not have_child end
+          it ':c is folk' do expect(@c).to be_folk end
+        end
+      end
+    end
     describe 'hierarchy pair errors' do
       ['[:a>b]','a>b','a>::b','[:b<<:a]',':b<<::a'].each do |ddl|
         describe ddl do

@@ -91,11 +91,11 @@ class Taxonomy < PTaxonomy
   end
 
   def instantiate(tag_ddl,item_dependent=true)
-    leaves = []
+    # item_dependent true if tag_ddl originates from an item
+    tags,leaves = [],[]
     Ddl.parse(tag_ddl)
     if Ddl.has_tags?
       tags = Ddl.tags.map {|name| get_lazy_tag(name,item_dependent)}
-      leaves = Ddl.leaves.map {|name| get_lazy_tag(name,item_dependent)}
       Ddl.links.each do |pair|
         [0,1].each do |i|
           pair[i] = pair[i].map {|name| get_lazy_tag(name,item_dependent)}
@@ -103,6 +103,8 @@ class Taxonomy < PTaxonomy
         link(pair[0],pair[1],false)
       end
       update_status(tags)
+      tags = Ddl.tags.map {|name| get_tag_by_name(name)} # re-acquire tags after update_status
+      leaves = Ddl.leaves.map {|name| get_tag_by_name(name)}
     end
     [leaves,tags]
   end
@@ -153,13 +155,8 @@ class Taxonomy < PTaxonomy
     end
   end
 
-  # def roots; @roots end
-
-  # def folksonomy; @folksonomy end
-
   def update_status(tags)
     this_status = lambda {|tag|
-      #puts "PTaxonomy.update_status: tag=#{tag}, tag.has_parent?=#{tag.has_parent?}, tag.has_child?=#{tag.has_child?}"
       if tag.has_parent?
         tag.register_offspring
       else
@@ -169,13 +166,13 @@ class Taxonomy < PTaxonomy
           tag.register_folksonomy
         end
       end
+      tag = get_tag_by_name(tag.name)
     }
     tags.each {|tag| this_status.call(tag)}
   end
 
   def link(children,parents,status=true)
     link_children = lambda {|children,parent|
-      #puts "Taxonomy.link.link_children: parent=#{parent}"
       children -= [parent]
       unless children.empty?
         ctags = children.clone
@@ -202,7 +199,6 @@ class Taxonomy < PTaxonomy
     }
     parents = parents.uniq
     children = children.uniq
-    #puts "Taxonomy.link: parents=#{parents}, children=#{children}"
     parents.each {|parent| link_children.call(children,parent)}
     update_status(parents|children) if status
   end

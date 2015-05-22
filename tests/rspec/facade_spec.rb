@@ -386,7 +386,7 @@ describe Taxonomy do
       it "result message" do expect(result_msg).to eq('list_taxonomies with name "" failed: taxonomy unspecified') end
       it "result data" do expect(result_data).to eq([]) end
     end
-    describe 'details 11 results' do
+    describe 'details 11 results, with various albums, items and tags added' do
       Tagm8Db.wipe
       face = Facade.instance
       face.add_taxonomy('tax01')

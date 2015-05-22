@@ -127,7 +127,7 @@ class Item < PItem
           else
             leaves,supplied = get_taxonomy.instantiate(tag_ddl)
             Debug.show(class:self.class,method:__method__,note:'2',vars:[['leaves',leaves]])
-            if op == '' || op == "="
+            if op == '' || op == '='
               leaves.each {|tag| tag.union_items([self])}
               self.tags << leaves
               Debug.show(class:self.class,method:__method__,note:'2b',vars:[['tags',tags],['get_taxonomy.tags',get_taxonomy.tags]])

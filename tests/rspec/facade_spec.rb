@@ -329,6 +329,88 @@ describe Taxonomy do
       it "result data" do expect(result_data).to eq([]) end
     end
   end
+  describe :list_taxonomies do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_album('tax1','alm1')
+    face.add_item('tax1','alm1','itm1\ncontent1 #t1>t2 #f1')
+    face.add_item('tax1','alm1','itm2\ncontent2')
+    face.add_album('tax1','alm2')
+    face.add_taxonomy('tax2')
+    face.add_album('tax2','alm1')
+    face.add_taxonomy('tax3')
+    describe 'taxonomy specified' do
+      describe '1 found' do
+        result_code,result_msg,*result_data = face.list_taxonomies('tax1')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('1 taxonomy found with name "tax1"') end
+        it "result data" do expect(result_data).to eq(['tax1']) end
+      end
+      describe 'none found' do
+        result_code,result_msg,*result_data = face.list_taxonomies('tax')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('no taxonomies found with name "tax"') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+    end
+    describe 'nothing specified with[out] reverse|details' do
+      describe '3 found' do
+        result_code,result_msg,*result_data = face.list_taxonomies
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('3 taxonomies found') end
+        it "result data" do expect(result_data).to eq(['tax1','tax2','tax3']) end
+      end
+      describe '3 found reversed' do
+        result_code,result_msg,*result_data = face.list_taxonomies(nil,true)
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('3 taxonomies found') end
+        it "result data" do expect(result_data).to eq(['tax3','tax2','tax1']) end
+      end
+      describe '3 found with details' do
+        result_code,result_msg,*result_data = face.list_taxonomies(nil,nil,true)
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('3 taxonomies found') end
+        it "result data" do expect(result_data).to eq(['taxonomy "tax1" DAG: prevent has 3 tags, 1 roots, 1 folks, 1 links and 2 albums','          tax2       prevent     0       0        0        0           1        ','          tax3       prevent     0       0        0        0           0        ']) end
+      end
+      describe '3 found reversed with details' do
+        result_code,result_msg,*result_data = face.list_taxonomies(nil,true,true)
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('3 taxonomies found') end
+        it "result data" do expect(result_data).to eq(['taxonomy "tax3" DAG: prevent has 0 tags, 0 roots, 0 folks, 0 links and 0 albums','          tax2       prevent     0       0        0        0           1        ','          tax1       prevent     3       1        1        1           2        ']) end
+      end
+    end
+    describe 'taxonomy unspecified' do
+      result_code,result_msg,*result_data = face.list_taxonomies('')
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('list_taxonomies with name "" failed: taxonomy unspecified') end
+      it "result data" do expect(result_data).to eq([]) end
+    end
+    describe 'details 11 results' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax01')
+      face.add_album('tax01','alm1')
+      face.add_item('tax01','alm1','itm1\ncontent1 #f1,t1>t2')
+      face.add_item('tax01','alm1','itm2\ncontent2')
+      face.add_album('tax01','alm2')
+      face.add_taxonomy('tax02')
+      face.add_album('tax02','alm1')
+      face.add_taxonomy('tax03')
+      face.add_taxonomy('tax04')
+      face.add_taxonomy('tax05')
+      face.add_taxonomy('tax06')
+      face.add_taxonomy('tax07')
+      face.add_taxonomy('tax08')
+      face.add_taxonomy('tax09')
+      face.add_taxonomy('tax10')
+      face.add_taxonomy('tax11')
+      result_code,result_msg,*result_data = face.list_taxonomies(nil,nil,true)
+      it "result_code" do expect(result_code).to eq(0) end
+      it "result message" do expect(result_msg).to eq('11 taxonomies found') end
+      it "result data" do expect(result_data).to eq(['taxonomy "tax01" DAG: prevent has 3 tags, 1 roots, 1 folks, 1 links and 2 albums','          tax02       prevent     0       0        0        0           1        ','          tax03       prevent     0       0        0        0           0        ','          tax04       prevent     0       0        0        0           0        ','          tax05       prevent     0       0        0        0           0        ','          tax06       prevent     0       0        0        0           0        ','          tax07       prevent     0       0        0        0           0        ','          tax08       prevent     0       0        0        0           0        ','          tax09       prevent     0       0        0        0           0        ','          tax10       prevent     0       0        0        0           0        ','taxonomy "tax11" DAG: prevent has 0 tags, 0 roots, 0 folks, 0 links and 0 albums']) end
+    end
+  end
 end
 describe Album do
   describe :add_album do
@@ -1008,7 +1090,7 @@ describe Item do
       face = Facade.instance
       face.add_taxonomy('tax1')
       face.add_album('tax1','alm1')
-      result = face.add_item('tax1','alm1','  itm1 \n#tag1,tag2 \n content line 1 \n content line 2 \n \n')
+      result = face.add_item('tax1','alm1','  itm1 \n#tag1>tag2,tag3 \n content line 1 \n content line 2 \n \n')
       result_code = result[0]
       result_msg  = result[1]
       result_data = result[2]
@@ -1017,15 +1099,26 @@ describe Item do
       itm1 = Item.get_by_name('itm1').first
       itm1_name = itm1.name
       itm1_content = itm1.get_content
-      tax1_tags = Taxonomy.get_by_name('tax1').list_tags.sort
+      tax1 = Taxonomy.get_by_name('tax1')
+      tax1_tag_count = tax1.count_tags
+      tax1_tags = tax1.list_tags.sort
+      tax1_root_count = tax1.count_roots
+      tax1_roots = tax1.roots.map{|root| root.name}.sort
+      tax1_folk_count = tax1.count_folksonomies
+      tax1_folks = tax1.folksonomies.map{|folk| folk.name}.sort
       it "result_code" do expect(result_code).to eq(0) end
       it "result message" do expect(result_msg).to eq('Item "itm1" added to album "alm1" in taxonomy "tax1"') end
       it "result data" do expect(result_data).to be_nil end
       it "items added OK" do expect(items).to eq(['itm1']) end
       it "alm1 items added OK" do expect(alm1_items).to eq(['itm1']) end
       it "itm1 name correct" do expect(itm1_name).to eq('itm1') end
-      it "itm1 content correct" do expect(itm1_content).to eq("#tag1,tag2 \n content line 1 \n content line 2") end
-      it "tax1 tags added OK" do expect(tax1_tags).to eq(['tag1','tag2']) end
+      it "itm1 content correct" do expect(itm1_content).to eq("#tag1>tag2,tag3 \n content line 1 \n content line 2") end
+      it "tax1 tag count OK" do expect(tax1_tag_count).to eq(3) end
+      it "tax1 root count OK" do expect(tax1_root_count).to eq(1) end
+      it "tax1 folk count OK" do expect(tax1_folk_count).to eq(1) end
+      it "tax1 coorect tags added" do expect(tax1_tags).to eq(['tag1','tag2','tag3']) end
+      it "tax1 correct roots added" do expect(tax1_roots).to eq(['tag1']) end
+      it "tax1 correct folks added" do expect(tax1_folks).to eq(['tag3']) end
     end
     describe 'taxonomy unspecified' do
       Tagm8Db.wipe

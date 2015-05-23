@@ -935,9 +935,9 @@ describe Item do
       tax1_tag_count = tax1.count_tags
       tax1_tags = tax1.list_tags.sort
       tax1_root_count = tax1.count_roots
-      tax1_roots = tax1.roots.map{|root| root.name}.sort
+      tax1_roots = tax1.list_roots.sort
       tax1_folk_count = tax1.count_folksonomies
-      tax1_folks = tax1.folksonomies.map{|folk| folk.name}.sort
+      tax1_folks = tax1.list_folksonomies.sort
       it "result_code" do expect(result_code).to eq(0) end
       it "result message" do expect(result_msg).to eq('Item "itm1" added to album "alm1" in taxonomy "tax1"') end
       it "result data" do expect(result_data).to eq([]) end
@@ -1892,7 +1892,7 @@ end
 describe Tag do
   describe :add_tags do
     describe 'tags added' do
-      describe '1 tag' do
+      describe '"t1" 1 tag' do
         Tagm8Db.wipe
         face = Facade.instance
         face.add_taxonomy('tax1')
@@ -1901,14 +1901,51 @@ describe Tag do
         it "result message" do expect(result_msg).to eq('1 tag and no links added to taxonomy "tax1"') end
         it "result data" do expect(result_data).to eq([]) end
       end
-      describe '2 tags, 1 link' do
+      describe '"tag1>tag2,tag3" 3 tags, 1 link, 1 root, 1 folk' do
         Tagm8Db.wipe
         face = Facade.instance
         face.add_taxonomy('tax1')
-        result_code,result_msg,*result_data = face.add_tags('tax1','t1>t2')
+        result_code,result_msg,*result_data = face.add_tags('tax1','tag1>tag2,tag3')
+        tax1 = Taxonomy.get_by_name('tax1')
+        tax1_tag_count = tax1.count_tags
+        tax1_tags = tax1.list_tags.sort
+        tax1_root_count = tax1.count_roots
+        tax1_roots = tax1.list_roots.sort
+        tax1_folk_count = tax1.count_folksonomies
+        tax1_folks = tax1.list_folksonomies.sort
+        face.add_taxonomy('tax2')
         it "result_code" do expect(result_code).to eq(0) end
-        it "result message" do expect(result_msg).to eq('2 tags and 1 link added to taxonomy "tax1"') end
+        it "result message" do expect(result_msg).to eq('3 tags and 1 link added to taxonomy "tax1"') end
         it "result data" do expect(result_data).to eq([]) end
+        it "tax1 tag count OK" do expect(tax1_tag_count).to eq(3) end
+        it "tax1 root count OK" do expect(tax1_root_count).to eq(1) end
+        it "tax1 folk count OK" do expect(tax1_folk_count).to eq(1) end
+        it "tax1 coorect tags added" do expect(tax1_tags).to eq(['tag1','tag2','tag3']) end
+        it "tax1 correct roots added" do expect(tax1_roots).to eq(['tag1']) end
+        it "tax1 correct folks added" do expect(tax1_folks).to eq(['tag3']) end
+      end
+      describe '"tag3,tag1>tag2" 3 tags, 1 link, 1 root, 1 folk with details' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        result_code,result_msg,*result_data = face.add_tags('tax1','tag3,tag1>tag2',true)
+        tax1 = Taxonomy.get_by_name('tax1')
+        tax1_tag_count = tax1.count_tags
+        tax1_tags = tax1.list_tags.sort
+        tax1_root_count = tax1.count_roots
+        tax1_roots = tax1.list_roots.sort
+        tax1_folk_count = tax1.count_folksonomies
+        tax1_folks = tax1.list_folksonomies.sort
+        face.add_taxonomy('tax2')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq("tag \"tag1\" added\ntag \"tag2\" added\ntag \"tag3\" added\n3 tags and 1 link added to taxonomy \"tax1\"") end
+        it "result data" do expect(result_data).to eq([]) end
+        it "tax1 tag count OK" do expect(tax1_tag_count).to eq(3) end
+        it "tax1 root count OK" do expect(tax1_root_count).to eq(1) end
+        it "tax1 folk count OK" do expect(tax1_folk_count).to eq(1) end
+        it "tax1 coorect tags added" do expect(tax1_tags).to eq(['tag1','tag2','tag3']) end
+        it "tax1 correct roots added" do expect(tax1_roots).to eq(['tag1']) end
+        it "tax1 correct folks added" do expect(tax1_folks).to eq(['tag3']) end
       end
     end
     describe 'taxonomy unspecified' do

@@ -163,20 +163,24 @@ class Facade
 
   def add_tags(taxonomy_name,tag_syntax,details=false)
     begin
+      taxonomy_name = 'nil:NilClass' if taxonomy_name.nil?
+      raise 'taxonomy unspecified' if taxonomy_name.empty? || taxonomy_name == 'nil:NilClass'
+      tag_syntax = 'nil:NilClass' if tag_syntax.nil?
+      raise 'tags unspecified' if tag_syntax.empty? || tag_syntax == 'nil:NilClass'
       raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-      raise "tags missing" if tag_syntax.empty?
       tax = Taxonomy.get_by_name(taxonomy_name)
       tags_before = tax.list_tags
       links_before = tax.count_links
       tax.instantiate(tag_syntax,false)
-      tags_added = (tax.list_tags-tags_before).sort.map{|name| "\"#{name}\""}
-      d_insert = ''
-      tags_added.each{|name| d_insert += "Tag \"#{name}\" added"} if details
+      tax = Taxonomy.get_by_name(taxonomy_name) # refresh tax after instantiate
+      tags_added = (tax.list_tags-tags_before).sort
+      details_msg = ''
+      tags_added.each{|name| details_msg += "tag \"#{name}\" added\n"} if details
       links_added = tax.count_links-links_before
       msg = grammar("#{tags_added.size} tags and #{links_added} links added to taxonomy \"#{taxonomy_name}\"")
-      [0,"#{d_insert}#{msg}"]
+      [0,"#{details_msg}#{msg}"]
     rescue => e
-      [1,"add_tags failed: #{e}"]
+      [1,"add_tags \"#{tag_syntax}\" to taxonomy \"#{taxonomy_name}\" failed: #{e}"]
     end
   end
 

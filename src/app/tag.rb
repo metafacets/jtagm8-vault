@@ -218,6 +218,10 @@ class Taxonomy < PTaxonomy
 
   def has_album?(name=nil) count_albums(name) > 0 end
 
+  def list_roots; roots.map{|root| root.name} end
+
+  def list_folksonomies; folksonomies.map{|root| root.name} end
+
 end
 
 class Tag < PTag

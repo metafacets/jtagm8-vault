@@ -2176,7 +2176,7 @@ describe Tag do
           it "result data" do expect(result_data).to eq([]) end
         end
       end
-      describe 'no suuplied tags found' do
+      describe 'no supplied tags found' do
         Tagm8Db.wipe
         face = Facade.instance
         face.add_taxonomy('tax1')
@@ -2184,6 +2184,147 @@ describe Tag do
         result_code,result_msg,*result_data = face.delete_tags('tax1','t2')
         it "result_code" do expect(result_code).to eq(1) end
         it "result message" do expect(result_msg).to eq('delete_tags "t2" from taxonomy "tax1" failed: no supplied tags found') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+    end
+  end
+  describe :rename_tag do
+    describe 'rename valid' do
+      describe 'tag renamed' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1')
+        result_code,result_msg,*result_data = face.rename_tag('tax1','t1','nt1')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('Tag renamed from "t1" to "nt1" in taxonomy "tax1"') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'item sourced tag renamed' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_album('tax1','alm1')
+        face.add_item('tax1','alm1','itm1\n#t1,t2\ncontent line 1\ncontent line 2')
+        result_code,result_msg,*result_data = face.rename_tag('tax1','t1','nt1')
+        itm1_content = Item.get_by_name('itm1').first.get_content
+        tax1_tags = Taxonomy.get_by_name('tax1').list_tags.sort
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('Tag renamed from "t1" to "nt1" in taxonomy "tax1"') end
+        it "result data" do expect(result_data).to eq([]) end
+        it "tag is renamed in items" do expect(itm1_content).to eq("#nt1,t2\ncontent line 1\ncontent line 2") end
+        it "tag is renamed in taxonomy" do expect(tax1_tags).to eq(['nt1','t2']) end
+      end
+    end
+    describe 'rename failed' do
+      describe 'taxonomy unspecified' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1')
+        result_code,result_msg,*result_data = face.rename_tag('','t1','nt1')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('rename_tag "t1" to "nt1" in taxonomy "" failed: taxonomy unspecified') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'taxonomy nil' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1')
+        result_code,result_msg,*result_data = face.rename_tag(nil,'t1','nt1')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('rename_tag "t1" to "nt1" in taxonomy "nil:NilClass" failed: taxonomy unspecified') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'taxonomy not found' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1')
+        result_code,result_msg,*result_data = face.rename_tag('tax2','t1','nt1')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('rename_tag "t1" to "nt1" in taxonomy "tax2" failed: taxonomy "tax2" not found') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'tag unspecified' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1')
+        result_code,result_msg,*result_data = face.rename_tag('tax1','','nt1')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('rename_tag "" to "nt1" in taxonomy "tax1" failed: tag unspecified') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'tag nil' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1')
+        result_code,result_msg,*result_data = face.rename_tag('tax1',nil,'nt1')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('rename_tag "nil:NilClass" to "nt1" in taxonomy "tax1" failed: tag unspecified') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'tag not found' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1')
+        result_code,result_msg,*result_data = face.rename_tag('tax1','t2','nt2')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('rename_tag "t2" to "nt2" in taxonomy "tax1" failed: tag "t2" not found in taxonomy "tax1"') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'rename unspecified' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1')
+        result_code,result_msg,*result_data = face.rename_tag('tax1','t1','')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('rename_tag "t1" to "" in taxonomy "tax1" failed: tag rename unspecified') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'rename nil' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1')
+        result_code,result_msg,*result_data = face.rename_tag('tax1','t1',nil)
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('rename_tag "t1" to "nil:NilClass" in taxonomy "tax1" failed: tag rename unspecified') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'rename unchanged' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1')
+        result_code,result_msg,*result_data = face.rename_tag('tax1','t1','t1')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('rename_tag "t1" to "t1" in taxonomy "tax1" failed: tag rename unchanged') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'rename taken' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1,nt1')
+        result_code,result_msg,*result_data = face.rename_tag('tax1','t1','nt1')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('rename_tag "t1" to "nt1" in taxonomy "tax1" failed: tag "nt1" taken by taxonomy "tax1"') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'rename invalid' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1')
+        result_code,result_msg,*result_data = face.rename_tag('tax1','t1','nt%')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('rename_tag "t1" to "nt%" in taxonomy "tax1" failed: tag "nt%" invalid - use alphanumeric and _ characters only') end
         it "result data" do expect(result_data).to eq([]) end
       end
     end

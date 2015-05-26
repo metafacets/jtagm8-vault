@@ -205,16 +205,24 @@ class Facade
 
   def rename_tag(taxonomy_name,tag_name,new_name)
     begin
+      taxonomy_name = 'nil:NilClass' if taxonomy_name.nil?
+      raise 'taxonomy unspecified' if taxonomy_name.empty? || taxonomy_name == 'nil:NilClass'
+      tag_name = 'nil:NilClass' if tag_name.nil?
+      raise 'tag unspecified' if tag_name.empty? || tag_name == 'nil:NilClass'
+      new_name = 'nil:NilClass' if new_name.nil?
+      raise 'tag rename unspecified' if new_name.empty? || new_name == 'nil:NilClass'
+      raise 'tag rename unchanged' if tag_name == new_name
+      raise "tag \"#{new_name}\" invalid - use alphanumeric and _ characters only" unless name_ok?(new_name)
       raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
       tax = Taxonomy.get_by_name(taxonomy_name)
-      raise "tag \"#{tag_name}\" not found" unless tax.has_tag?(tag_name)
-      raise "\"#{new_name}\" invalid - use alphanumeric and _ characters only" unless name_ok?(new_name)
+      raise "tag \"#{tag_name}\" not found in taxonomy \"#{taxonomy_name}\"" unless tax.has_tag?(tag_name)
+      raise "tag \"#{new_name}\" taken by taxonomy \"#{taxonomy_name}\"" if tax.has_tag?(new_name)
       tag = tax.get_tag_by_name(tag_name)
       tag.rename(new_name)
       raise "name is \"#{tag.name}\"" unless tag.name == new_name
-      [0,"tag \"#{tag_name}\" renamed to \"#{new_name}\" in taxonomy \"#{taxonomy_name}\""]
+      [0,"Tag renamed from \"#{tag_name}\" to \"#{new_name}\" in taxonomy \"#{taxonomy_name}\""]
     rescue => e
-      [1,"rename_tag \"#{tag_name}\" failed: #{e}"]
+      [1,"rename_tag \"#{tag_name}\" to \"#{new_name}\" in taxonomy \"#{taxonomy_name}\" failed: #{e}"]
     end
   end
 

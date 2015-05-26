@@ -157,9 +157,10 @@ end
 desc 'Count tags within a taxonomy'
 #arg_name 'Describe arguments to create here'
 command :count_tags do |c|
-  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.flag [:t,:taxonomy], desc:'taxonomy name'
+  c.flag [:n,:name,:tag], desc:'tag name'
   c.action do |_,options,_|
-    show(facade.count_tags(options[:taxonomy]))
+    show(facade.count_tags(options[:taxonomy],options[:tag]))
   end
 end
 

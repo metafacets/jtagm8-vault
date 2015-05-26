@@ -275,12 +275,23 @@ class Facade
     end
   end
 
-  def count_tags(taxonomy_name)
+  def count_tags(taxonomy_name=nil,tag_name=nil)
     begin
-      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-      [0,'',Taxonomy.lazy(taxonomy_name).count_tags]
+      what = ''
+      what += " with name \"#{tag_name}\"" unless tag_name.nil?
+      what += " in taxonomy \"#{taxonomy_name}\"" unless taxonomy_name.nil?
+      raise 'tag unspecified' if !tag_name.nil? && tag_name.empty?
+      if taxonomy_name.nil?
+        raise 'no taxonomies found' unless Taxonomy.exists?
+        res = Tag.count_by_name(tag_name)
+      else
+        raise 'taxonomy unspecified' if taxonomy_name.empty?
+        raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+        res = Taxonomy.get_by_name(taxonomy_name).count_tags(tag_name)
+      end
+      [0,'',res]
     rescue => e
-      [1,"count_tags failed: #{e}"]
+      [1,"count_tags#{what} failed: #{e}"]
     end
   end
 

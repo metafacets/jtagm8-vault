@@ -458,17 +458,6 @@ describe Album do
       it "result message" do expect(result_msg).to eq("album \"alm1\" deleted\nalbum \"alm2\" deleted\n2 of 3 albums \"alm1,alm2,alm4\" found and deleted from taxonomy \"tax1\"") end
       it "result data" do expect(result_data).to eq([]) end
     end
-    describe 'no listed albums found' do
-      Tagm8Db.wipe
-      face = Facade.instance
-      face.add_taxonomy('tax1')
-      face.add_album('tax1','alm1')
-      face.add_album('tax1','alm2')
-      result_code,result_msg,*result_data = face.delete_albums('tax1','alm3,alm4')
-      it "result_code" do expect(result_code).to eq(1) end
-      it "result message" do expect(result_msg).to eq('delete_albums "alm3,alm4" from taxonomy "tax1" failed: no listed albums found') end
-      it "result data" do expect(result_data).to eq([]) end
-    end
     describe 'taxonomy unspecified' do
       Tagm8Db.wipe
       face = Facade.instance
@@ -515,6 +504,17 @@ describe Album do
       result_code,result_msg,*result_data = face.delete_albums('tax1',nil)
       it "result_code" do expect(result_code).to eq(1) end
       it "result message" do expect(result_msg).to eq('delete_albums "nil:NilClass" from taxonomy "tax1" failed: album list missing') end
+      it "result data" do expect(result_data).to eq([]) end
+    end
+    describe 'no listed albums found' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      face.add_album('tax1','alm2')
+      result_code,result_msg,*result_data = face.delete_albums('tax1','alm3,alm4')
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('delete_albums "alm3,alm4" from taxonomy "tax1" failed: no listed albums found') end
       it "result data" do expect(result_data).to eq([]) end
     end
   end
@@ -1128,18 +1128,6 @@ describe Item do
       it "dependent tag with items kept" do expect(dependent_with_item_kept).to be_truthy end
       it "dependent tag without items deleted" do expect(dependent_without_item_deleted).to be_truthy end
     end
-    describe 'no listed items found' do
-      Tagm8Db.wipe
-      face = Facade.instance
-      face.add_taxonomy('tax1')
-      face.add_album('tax1','alm1')
-      face.add_item('tax1','alm1','itm1\ncontent1')
-      face.add_item('tax1','alm1','itm2\ncontent2')
-      result_code,result_msg,*result_data = face.delete_items('tax1','alm1','itm3,itm4')
-      it "result_code" do expect(result_code).to eq(1) end
-      it "result message" do expect(result_msg).to eq('delete_items "itm3,itm4" from album "alm1" of taxonomy "tax1" failed: no listed items found') end
-      it "result data" do expect(result_data).to eq([]) end
-    end
     describe 'taxonomy unspecified' do
       Tagm8Db.wipe
       face = Facade.instance
@@ -1226,6 +1214,18 @@ describe Item do
       result_code,result_msg,*result_data = face.delete_items('tax1','alm1',nil)
       it "result_code" do expect(result_code).to eq(1) end
       it "result message" do expect(result_msg).to eq('delete_items "nil:NilClass" from album "alm1" of taxonomy "tax1" failed: item list missing') end
+      it "result data" do expect(result_data).to eq([]) end
+    end
+    describe 'no listed items found' do
+      Tagm8Db.wipe
+      face = Facade.instance
+      face.add_taxonomy('tax1')
+      face.add_album('tax1','alm1')
+      face.add_item('tax1','alm1','itm1\ncontent1')
+      face.add_item('tax1','alm1','itm2\ncontent2')
+      result_code,result_msg,*result_data = face.delete_items('tax1','alm1','itm3,itm4')
+      it "result_code" do expect(result_code).to eq(1) end
+      it "result message" do expect(result_msg).to eq('delete_items "itm3,itm4" from album "alm1" of taxonomy "tax1" failed: no listed items found') end
       it "result data" do expect(result_data).to eq([]) end
     end
   end
@@ -1967,10 +1967,225 @@ describe Tag do
     describe 'taxonomy not found' do
       Tagm8Db.wipe
       face = Facade.instance
-      result_code,result_msg,*result_data = face.add_tags('tax1','t1')
+      face.add_taxonomy('tax1')
+      result_code,result_msg,*result_data = face.add_tags('tax','t1')
       it "result_code" do expect(result_code).to eq(1) end
-      it "result message" do expect(result_msg).to eq('add_tags "t1" to taxonomy "tax1" failed: taxonomy "tax1" not found') end
+      it "result message" do expect(result_msg).to eq('add_tags "t1" to taxonomy "tax" failed: taxonomy "tax" not found') end
       it "result data" do expect(result_data).to eq([]) end
+    end
+  end
+  describe :delete_tags do
+    describe 'tags deleted' do
+      describe '+ t1: - t1' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1')
+        result_code,result_msg,*result_data = face.delete_tags('tax1','t1')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('1 of 1 supplied tags found and deleted from taxonomy "tax1"') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe '+ t1>t2>t3,t4: - t2,t4' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1>t2>t3,t4')
+        result_code,result_msg,*result_data = face.delete_tags('tax1','t2,t4')
+        tax1 = Taxonomy.get_by_name('tax1')
+        tax1_tags = tax1.list_tags.sort
+        tax1_roots = tax1.list_roots.sort
+        tax1_folks = tax1.list_folksonomies.sort
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('2 of 2 supplied tags found and deleted from taxonomy "tax1"') end
+        it "result data" do expect(result_data).to eq([]) end
+        it "[t1,t3] tags remain" do expect(tax1_tags).to eq(['t1','t3']) end
+        it "[t1] roots remain" do expect(tax1_roots).to eq(['t1']) end
+        it "[] folks remain" do expect(tax1_folks).to eq([]) end
+      end
+      describe '+ t1>t2>t3,t4: - t2,t4 with details' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1>t2>t3,t4')
+        result_code,result_msg,*result_data = face.delete_tags('tax1','t2,t4,t5',nil,true)
+        tax1 = Taxonomy.get_by_name('tax1')
+        tax1_tags = tax1.list_tags.sort
+        tax1_roots = tax1.list_roots.sort
+        tax1_folks = tax1.list_folksonomies.sort
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq("tag \"t2\" deleted\ntag \"t4\" deleted\n2 of 3 supplied tags found and deleted from taxonomy \"tax1\"") end
+        it "result data" do expect(result_data).to eq([]) end
+        it "[t1,t3] tags remain" do expect(tax1_tags).to eq(['t1','t3']) end
+        it "[t1] roots remain" do expect(tax1_roots).to eq(['t1']) end
+        it "[] folks remain" do expect(tax1_folks).to eq([]) end
+      end
+      describe '+ t1>t2>t3,t4: - t2,t4 branch with details' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1>t2>t3,t4')
+        result_code,result_msg,*result_data = face.delete_tags('tax1','t2,t4,t5',true,true)
+        tax1 = Taxonomy.get_by_name('tax1')
+        tax1_tags = tax1.list_tags.sort
+        tax1_roots = tax1.list_roots.sort
+        tax1_folks = tax1.list_folksonomies.sort
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq("tag \"t2\" deleted\ntag \"t3\" deleted\ntag \"t4\" deleted\n2 of 3 supplied tags found, 3 deleted from taxonomy \"tax1\"") end
+        it "result data" do expect(result_data).to eq([]) end
+        it "[t1] tags remain" do expect(tax1_tags).to eq(['t1']) end
+        it "[] roots remain" do expect(tax1_roots).to eq([]) end
+        it "[t1] folks remain" do expect(tax1_folks).to eq(['t1']) end
+      end
+      describe '+ t1>t2,t3: - t1,t4' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1>t2,t3')
+        result_code,result_msg,*result_data = face.delete_tags('tax1','t1,t4')
+        tax1 = Taxonomy.get_by_name('tax1')
+        tax1_tags = tax1.list_tags.sort
+        tax1_roots = tax1.list_roots.sort
+        tax1_folks = tax1.list_folksonomies.sort
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('1 of 2 supplied tags found and deleted from taxonomy "tax1"') end
+        it "result data" do expect(result_data).to eq([]) end
+        it "[t2,t3] tags remain" do expect(tax1_tags).to eq(['t2','t3']) end
+        it "[] roots remain" do expect(tax1_roots).to eq([]) end
+        it "[t2,t3] folks remain" do expect(tax1_folks).to eq(['t2','t3']) end
+      end
+      describe '+ t1>t2,t3 - t1,t4: -t1,t2 ' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1>t2,t3')
+        face.delete_tags('tax1','t1,t4')
+        result_code,result_msg,*result_data = face.delete_tags('tax1','t1,t2')
+        tax1 = Taxonomy.get_by_name('tax1')
+        tax1_tags = tax1.list_tags.sort
+        tax1_roots = tax1.list_roots.sort
+        tax1_folks = tax1.list_folksonomies.sort
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('1 of 2 supplied tags found and deleted from taxonomy "tax1"') end
+        it "result data" do expect(result_data).to eq([]) end
+        it "t3 tags remain" do expect(tax1_tags).to eq(['t3']) end
+        it "[] roots remain" do expect(tax1_roots).to eq([]) end
+        it "[t3] folks remain" do expect(tax1_folks).to eq(['t3']) end
+      end
+    end
+    describe 'delete_tags failed' do
+      describe 'taxonomy unspecified' do
+        describe 'other taxonomy and tags exist' do
+          Tagm8Db.wipe
+          face = Facade.instance
+          face.add_taxonomy('tax1')
+          face.add_tags('tax1','t1')
+          result_code,result_msg,*result_data = face.delete_tags('','t1')
+          it "result_code" do expect(result_code).to eq(1) end
+          it "result message" do expect(result_msg).to eq('delete_tags "t1" from taxonomy "" failed: taxonomy unspecified') end
+          it "result data" do expect(result_data).to eq([]) end
+        end
+        describe 'no taxonomy and tags exist' do
+          Tagm8Db.wipe
+          face = Facade.instance
+          face.add_taxonomy('tax1')
+          face.add_tags('tax1','t1')
+          result_code,result_msg,*result_data = face.delete_tags('','t1')
+          it "result_code" do expect(result_code).to eq(1) end
+          it "result message" do expect(result_msg).to eq('delete_tags "t1" from taxonomy "" failed: taxonomy unspecified') end
+          it "result data" do expect(result_data).to eq([]) end
+        end
+      end
+      describe 'taxonomy nil' do
+        describe 'other taxonomy and tags exist' do
+          Tagm8Db.wipe
+          face = Facade.instance
+          face.add_taxonomy('tax1')
+          face.add_tags('tax1','t1')
+          result_code,result_msg,*result_data = face.delete_tags(nil,'t1')
+          it "result_code" do expect(result_code).to eq(1) end
+          it "result message" do expect(result_msg).to eq('delete_tags "t1" from taxonomy "nil:NilClass" failed: taxonomy unspecified') end
+          it "result data" do expect(result_data).to eq([]) end
+        end
+        describe 'no taxonomy and tags exist' do
+          Tagm8Db.wipe
+          face = Facade.instance
+          result_code,result_msg,*result_data = face.delete_tags(nil,'t1')
+          it "result_code" do expect(result_code).to eq(1) end
+          it "result message" do expect(result_msg).to eq('delete_tags "t1" from taxonomy "nil:NilClass" failed: taxonomy unspecified') end
+          it "result data" do expect(result_data).to eq([]) end
+        end
+      end
+      describe 'taxonomy not found' do
+        describe 'other taxonomy and tags exist' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax2')
+        face.add_tags('tax2','t1')
+        result_code,result_msg,*result_data = face.delete_tags('tax1','t1')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('delete_tags "t1" from taxonomy "tax1" failed: taxonomy "tax1" not found') end
+        it "result data" do expect(result_data).to eq([]) end
+        end
+        describe 'no taxonomy and tags exist' do
+          Tagm8Db.wipe
+          face = Facade.instance
+          result_code,result_msg,*result_data = face.delete_tags('tax1','t1')
+          it "result_code" do expect(result_code).to eq(1) end
+          it "result message" do expect(result_msg).to eq('delete_tags "t1" from taxonomy "tax1" failed: taxonomy "tax1" not found') end
+          it "result data" do expect(result_data).to eq([]) end
+        end
+      end
+      describe 'tag syntax missing - empty' do
+        describe 'taxonomy and tags exist' do
+          Tagm8Db.wipe
+          face = Facade.instance
+          face.add_taxonomy('tax1')
+          face.add_tags('tax1','t1')
+          result_code,result_msg,*result_data = face.delete_tags('tax1','')
+          it "result_code" do expect(result_code).to eq(1) end
+          it "result message" do expect(result_msg).to eq('delete_tags "" from taxonomy "tax1" failed: tag syntax missing') end
+          it "result data" do expect(result_data).to eq([]) end
+        end
+        describe 'no taxonomy and tags exist' do
+          Tagm8Db.wipe
+          face = Facade.instance
+          result_code,result_msg,*result_data = face.delete_tags('tax1','')
+          it "result_code" do expect(result_code).to eq(1) end
+          it "result message" do expect(result_msg).to eq('delete_tags "" from taxonomy "tax1" failed: tag syntax missing') end
+          it "result data" do expect(result_data).to eq([]) end
+        end
+      end
+      describe 'tag syntax missing - nil' do
+        describe 'taxonomy and tags exist' do
+          Tagm8Db.wipe
+          face = Facade.instance
+          face.add_taxonomy('tax1')
+          face.add_tags('tax1','t1')
+          result_code,result_msg,*result_data = face.delete_tags('tax1',nil)
+          it "result_code" do expect(result_code).to eq(1) end
+          it "result message" do expect(result_msg).to eq('delete_tags "nil:NilClass" from taxonomy "tax1" failed: tag syntax missing') end
+          it "result data" do expect(result_data).to eq([]) end
+        end
+        describe 'taxonomy and tags exist' do
+          Tagm8Db.wipe
+          face = Facade.instance
+          result_code,result_msg,*result_data = face.delete_tags('tax1',nil)
+          it "result_code" do expect(result_code).to eq(1) end
+          it "result message" do expect(result_msg).to eq('delete_tags "nil:NilClass" from taxonomy "tax1" failed: tag syntax missing') end
+          it "result data" do expect(result_data).to eq([]) end
+        end
+      end
+      describe 'no suuplied tags found' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        face.add_tags('tax1','t1')
+        result_code,result_msg,*result_data = face.delete_tags('tax1','t2')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('delete_tags "t2" from taxonomy "tax1" failed: no supplied tags found') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
     end
   end
 end

@@ -186,16 +186,20 @@ class Facade
 
   def delete_tags(taxonomy_name,tag_syntax,branch=false,details=false)
     begin
+      taxonomy_name = 'nil:NilClass' if taxonomy_name.nil?
+      raise 'taxonomy unspecified' if taxonomy_name.empty? || taxonomy_name == 'nil:NilClass'
+      tag_syntax = 'nil:NilClass' if tag_syntax.nil?
+      raise 'tag syntax missing' if tag_syntax.empty? || tag_syntax == 'nil:NilClass'
       raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-      raise "tags missing" if tag_syntax.empty?
       tax = Taxonomy.get_by_name(taxonomy_name)
       supplied,found,deleted,deleted_list = tax.exstantiate(tag_syntax,branch,true)
-      d_insert = ''
-      deleted_list.each{|tag| d_insert += "Tag \"#{tag}\" deleted\n"} if details
+      raise 'no supplied tags found' if found < 1
+      details_msg = ''
+      deleted_list.each{|tag| details_msg += "tag \"#{tag}\" deleted\n"} if details
       found == deleted ? insert = ' and' : insert = ", #{deleted}"
-      [0,"#{d_insert}#{found} of #{supplied} supplied tags found#{insert} deleted from taxonomy \"#{taxonomy_name}\""]
+      [0,"#{details_msg}#{found} of #{supplied} supplied tags found#{insert} deleted from taxonomy \"#{taxonomy_name}\""]
     rescue => e
-      [1,"delete_tags failed: #{e}"]
+      [1,"delete_tags \"#{tag_syntax}\" from taxonomy \"#{taxonomy_name}\" failed: #{e}"]
     end
   end
 

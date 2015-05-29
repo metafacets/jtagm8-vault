@@ -306,7 +306,7 @@ class Facade
           res.each do |tag_name,tag|
     #        puts "Facade.list_tags: tag.name=#{tag.name}, tag.is_root=#{tag.is_root}, tag.is_folk=#{tag.is_folk}"
             if tag.is_root
-              tag_type = 'rrot'
+              tag_type = 'root'
             elsif tag.is_folk
               tag_type = 'folksonomy'
             elsif tag.has_child?

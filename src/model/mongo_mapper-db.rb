@@ -180,13 +180,18 @@ class PTag
     name.nil? ? PTag.count : PTag.where(name:name.to_s).size
   end
 
-  # to be used by Facade.list|rename|delete_tags where taxonomy_name is nil
-  def self.get_by_name(name)
-    PTag.where(name:name.to_s).all
+  def self.get_by_name(name=nil)
+    name.nil? ? PTag.all : PTag.where(name:name.to_s).all
   end
 
   def self.get_by_id(id)
     PTag.first(_id:id.to_s)
+  end
+
+  def self.list(name=nil)
+    res = PTag.all.map {|tax| tax.name}
+    res = res.select {|tag_name| tag_name == name} unless name.nil?
+    res
   end
 
   def get_taxonomy

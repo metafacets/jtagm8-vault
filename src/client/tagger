@@ -99,6 +99,28 @@ command :dag_false do |c|
   end
 end
 
+desc 'Delete Taxonomies'
+long_desc 'Delete Taxonomies from the current database'
+# arg_name 'taxonomy-name'
+command :delete_taxonomies do |c|
+  c.flag [:l,:list], desc:'taxonomy list', required:true
+  c.switch [:d,:details], desc:'detailed output'
+  c.action do |_,options,_|
+    show(facade.delete_taxonomies(options[:list],options[:details]))
+  end
+end
+
+desc 'Rename taxonomy'
+long_desc 'Rename a taxonomy from current-name to new-name'
+#arg_name 'Describe arguments to create here'
+command :rename_taxonomy do |c|
+  c.flag [:c,:t,:current,:taxonomy], desc:'current taxonomy name', required:true
+  c.flag [:n,:new], desc:'new taxonomy name', required:true
+  c.action do |_,options,_|
+    show(facade.rename_taxonomy(options[:current],options[:new]))
+  end
+end
+
 desc 'Count Taxonomies'
 long_desc 'Count Taxonomies within the current database'
 # arg_name 'taxonomy-name'
@@ -121,17 +143,6 @@ command :list_taxonomies do |c|
   end
 end
 
-desc 'Delete Taxonomies'
-long_desc 'Delete Taxonomies from the current database'
-# arg_name 'taxonomy-name'
-command :delete_taxonomies do |c|
-  c.flag [:l,:list], desc:'taxonomy list', required:true
-  c.switch [:d,:details], desc:'detailed output'
-  c.action do |_,options,_|
-    show(facade.delete_taxonomies(options[:list],options[:details]))
-  end
-end
-
 desc 'Add tags to a taxonomy'
 #arg_name 'Describe arguments to create here'
 command :add_tags do |c|
@@ -143,14 +154,28 @@ command :add_tags do |c|
   end
 end
 
-desc 'List tags within a taxonomy'
+desc 'Delete tags within a taxonomy'
+long_desc 'Delete a list of tags or branches within a taxonomy optionally reporting details'
 #arg_name 'Describe arguments to create here'
-command :list_tags do |c|
-  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
-  c.switch [:r,:reverse], desc:'reverse sort alphabetically'
-  c.switch [:h,:hierarchy], desc:'show hierarchy'
+command :delete_tags do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name'
+  c.flag [:l,:list], desc:'list of tags to be deleted', required:true
+  c.switch [:b,:branch], desc:'delete branch'
+  c.switch [:d,:details], desc:'detailed output'
   c.action do |_,options,_|
-    show(facade.list_tags(options[:taxonomy],options[:reverse],options[:hierarchy]))
+    show(facade.delete_tags(options[:taxonomy],options[:list],options[:branch],options[:details]))
+  end
+end
+
+desc 'Rename tag'
+long_desc 'Rename a tag  within a taxonomy from current-name to new-name'
+#arg_name 'Describe arguments to create here'
+command :rename_tag do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.flag [:c,:current,:tag], desc:'current tag name', required:true
+  c.flag [:n,:new], desc:'new taxonomy name', required:true
+  c.action do |_,options,_|
+    show(facade.rename_tag(options[:taxonomy],options[:current],options[:new]))
   end
 end
 
@@ -191,16 +216,25 @@ command :count_folksonomies do |c|
   end
 end
 
-desc 'Delete tags within a taxonomy'
-long_desc 'Delete a list of tags or branches within a taxonomy optionally reporting details'
+desc 'List tags within a taxonomy'
 #arg_name 'Describe arguments to create here'
-command :delete_tags do |c|
+command :list_tags do |c|
   c.flag [:t,:taxonomy], desc:'taxonomy name'
-  c.flag [:l,:list], desc:'list of tags to be deleted', required:true
-  c.switch [:b,:branch], desc:'delete branch'
-  c.switch [:d,:details], desc:'detailed output'
+  c.flag [:n,:name,:tag], desc:'tag name'
+  c.switch [:r,:reverse], desc:'reverse sort alphabetically'
+  c.switch [:d,:details], desc:'show details'
   c.action do |_,options,_|
-    show(facade.delete_tags(options[:taxonomy],options[:list],options[:branch],options[:details]))
+    show(facade.list_tags(options[:taxonomy],options[:tag],options[:reverse],options[:details]))
+  end
+end
+
+desc 'List structure of a taxonomy'
+#arg_name 'Describe arguments to create here'
+command :list_structure do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.switch [:r,:reverse], desc:'reverse sort alphabetically'
+  c.action do |_,options,_|
+    show(facade.list_structure(options[:taxonomy],options[:reverse]))
   end
 end
 
@@ -228,41 +262,6 @@ command :list_descendents do |c|
   end
 end
 
-desc 'Rename taxonomy'
-long_desc 'Rename a taxonomy from current-name to new-name'
-#arg_name 'Describe arguments to create here'
-command :rename_taxonomy do |c|
-  c.flag [:c,:t,:current,:taxonomy], desc:'current taxonomy name', required:true
-  c.flag [:n,:new], desc:'new taxonomy name', required:true
-  c.action do |_,options,_|
-    show(facade.rename_taxonomy(options[:current],options[:new]))
-  end
-end
-
-desc 'Rename tag'
-long_desc 'Rename a tag  within a taxonomy from current-name to new-name'
-#arg_name 'Describe arguments to create here'
-command :rename_tag do |c|
-  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
-  c.flag [:c,:current,:tag], desc:'current tag name', required:true
-  c.flag [:n,:new], desc:'new taxonomy name', required:true
-  c.action do |_,options,_|
-    show(facade.rename_tag(options[:taxonomy],options[:current],options[:new]))
-  end
-end
-
-desc 'Rename album'
-long_desc 'Rename an album optionally  within a taxonomy from current-name to new-name'
-#arg_name 'Describe arguments to create here'
-command :rename_album do |c|
-  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
-  c.flag [:c,:a,:album,:current], desc:'current album name', required:true
-  c.flag [:n,:new], desc:'new album name', required:true
-  c.action do |_,options,_|
-    show(facade.rename_album(options[:taxonomy],options[:current],options[:new]))
-  end
-end
-
 desc 'Add album to a taxonomy'
 long_desc 'Add a new album to an existing taxonomy - taxonomies cannot share albums'
 #arg_name 'Describe arguments to create here'
@@ -283,6 +282,18 @@ command :delete_albums do |c|
   c.switch [:d,:details], desc:'detailed output'
   c.action do |_,options,_|
     show(facade.delete_albums(options[:taxonomy],options[:list],options[:details]))
+  end
+end
+
+desc 'Rename album'
+long_desc 'Rename an album optionally  within a taxonomy from current-name to new-name'
+#arg_name 'Describe arguments to create here'
+command :rename_album do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name', required:true
+  c.flag [:c,:a,:album,:current], desc:'current album name', required:true
+  c.flag [:n,:new], desc:'new album name', required:true
+  c.action do |_,options,_|
+    show(facade.rename_album(options[:taxonomy],options[:current],options[:new]))
   end
 end
 

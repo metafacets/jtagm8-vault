@@ -226,55 +226,6 @@ class Facade
     end
   end
 
-  def list_tags(taxonomy_name,reverse=false,hierarchy=false)
-    begin
-      show_nested = lambda{|taxonomy,tag_name,reverse,depth=0|
-        indent = '   '*depth if depth > 0
-        tree = ["#{indent}#{tag_name}\n"]
-        list_children = taxonomy.get_tag_by_name(tag_name).get_children.map{|child| child.name}.sort
-        list_children.reverse! if reverse
-        list_children.each{|child_name| tree += show_nested.call(taxonomy,child_name,reverse,depth+1)}
-        tree
-      }
-      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-      tax = Taxonomy.lazy(taxonomy_name)
-      unless tax.empty?
-        res = []
-        tags_count = tax.count_tags
-        roots_count = tax.count_roots
-        folks_count = tax.count_folksonomies
-        if hierarchy
-          if roots_count > 0
-            roots = tax.roots.map{|tag| tag.name}.sort!
-            roots.reverse! if reverse
-            roots.each{|root_name| res += show_nested.call(tax,root_name,reverse)}
-            msg = "#{roots_count} hierarchies found containing #{tags_count-folks_count} tags and #{tax.count_links} links\n"
-          else
-            msg = "No tag hierarchies found\n"
-          end
-          if folks_count > 0
-            folks = tax.folksonomies.map{|tag| tag.name}.sort!
-            folks.reverse! if reverse
-            res += folks
-            msg += "#{folks_count} folksonomy_tags found\n"
-          else
-            msg += "No folksonomy_tags found\n"
-          end
-        else
-          res = tax.list_tags.sort!
-          res.reverse! if reverse
-          msg = ''
-        end
-        msg += "#{tags_count} tags found in total"
-      else
-        msg = "No tags found"
-      end
-      [0,"#{grammar(msg)} for taxonomy \"#{taxonomy_name}\""] + res
-    rescue => e
-      [1,"list_tags failed: #{e}"]
-    end
-  end
-
   def count_tags(taxonomy_name=nil,tag_name=nil)
     begin
       what = ''
@@ -319,6 +270,121 @@ class Facade
       [0,'',Taxonomy.lazy(taxonomy_name).count_folksonomies]
     rescue => e
       [1,"count_folksonomies failed: #{e}"]
+    end
+  end
+
+  def list_tags(taxonomy_name=nil,tag_name=nil,reverse=false,details=false)
+    begin
+      what = ''
+      what += " with name \"#{tag_name}\"" unless tag_name.nil?
+      what += " in taxonomy \"#{taxonomy_name}\"" unless taxonomy_name.nil?
+      raise 'tag unspecified' if !tag_name.nil? && tag_name.empty?
+      if taxonomy_name.nil?
+        raise 'no taxonomies found' unless Taxonomy.exists?
+        tags = Tag.get_by_name(tag_name)
+      else
+        raise 'taxonomy unspecified' if taxonomy_name.empty?
+        raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+        tax = Taxonomy.get_by_name(taxonomy_name)
+        tags = []
+        if tag_name.nil?
+          tags = tax.tags
+        else
+          tag = tax.get_tag_by_name(tag_name)
+          tags += [tag] unless tag.nil?
+        end
+      end
+      res = tags.map{|tag| [tag.name,tag]}
+      res_count = res.size
+      unless res.empty?
+        if tag_name.nil?
+          res.sort_by!(&:first)
+          res.reverse! if reverse
+        end
+        if details
+          details,tag_name_max_size,tag_type_max_size,tax_name_max_size,itm_count_max_size,itm_dep_max_size,i = [],0,0,0,0,0,0
+          res.each do |tag_name,tag|
+    #        puts "Facade.list_tags: tag.name=#{tag.name}, tag.is_root=#{tag.is_root}, tag.is_folk=#{tag.is_folk}"
+            if tag.is_root
+              tag_type = 'rrot'
+            elsif tag.is_folk
+              tag_type = 'folksonomy'
+            elsif tag.has_child?
+              tag_type = 'branch'
+            else
+              tag_type = 'leaf'
+            end
+            tag.item_dependent ? itm_dep = 'dependent' : itm_dep = 'independent'
+            tax_name,itm_count = tag.get_taxonomy.name,tag.items.size
+            details[i] = [tag_name,tag_type,tax_name,itm_count,itm_dep]
+            tag_name_max_size = tag_name.size if tag_name.size > tag_name_max_size
+            tag_type_max_size = tag_type.size if tag_type.size > tag_type_max_size
+            tax_name_max_size = tax_name.size if tax_name.size > tax_name_max_size
+            itm_count_max_size = itm_count/10+1 if itm_count/10+1 > itm_count_max_size
+            itm_dep_max_size = itm_dep.size if itm_dep.size > itm_dep_max_size
+            i += 1
+          end
+          res = []
+          details.each_with_index do |detail,i|
+            if i%10 == 0
+              res[i] = "tag \"%-#{tag_name_max_size}s\" of type \"%-#{tag_type_max_size}s\" in taxonomy \"%-#{tax_name_max_size}s\" tags %#{itm_count_max_size}s items and is item %-#{itm_dep_max_size}s" % [detail[0],detail[1],detail[2],detail[3],detail[4]]
+            else
+              res[i] = "     %-#{tag_name_max_size}s           %-#{tag_type_max_size}s               %-#{tax_name_max_size}s       %#{itm_count_max_size}s                   %-#{itm_dep_max_size}s" % [detail[0],detail[1],detail[2],detail[3],detail[4]]
+            end
+          end
+        else
+          res.map!{|row| row[0]}
+        end
+      end
+      [0,grammar("#{res_count} tags found#{what}")]+res
+    rescue => e
+      [1,"list_tags#{what} failed: #{e}"]
+    end
+  end
+
+  def list_structure(taxonomy_name,reverse=false)
+    begin
+      show_nested = lambda{|taxonomy,tag_name,reverse,depth=0|
+        indent = '   '*depth if depth > 0
+        tree = ["#{indent}#{tag_name}\n"]
+        list_children = taxonomy.get_tag_by_name(tag_name).get_children.map{|child| child.name}.sort
+        list_children.reverse! if reverse
+        list_children.each{|child_name| tree += show_nested.call(taxonomy,child_name,reverse,depth+1)}
+        tree
+      }
+      taxonomy_name = 'nil:NilClass' if taxonomy_name.nil?
+      raise 'taxonomy unspecified' if taxonomy_name.empty? || taxonomy_name == 'nil:NilClass'
+      raise 'no taxonomies found' unless Taxonomy.exists?
+      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      tax = Taxonomy.lazy(taxonomy_name)
+      unless tax.empty?
+        res = []
+        tags_count = tax.count_tags
+        roots_count = tax.count_roots
+        folks_count = tax.count_folksonomies
+        if roots_count > 0
+          roots = tax.roots.map{|tag| tag.name}.sort!
+          roots.reverse! if reverse
+          roots.each{|root_name| res += show_nested.call(tax,root_name,reverse)}
+          msg = "#{roots_count} hierarchies found containing #{tags_count-folks_count} tags and #{tax.count_links} links\n"
+        else
+          msg = "No tag hierarchies found\n"
+        end
+        if folks_count > 0
+          folks = tax.folksonomies.map{|tag| tag.name}.sort!
+          folks.reverse! if reverse
+          res += folks
+          msg += "#{folks_count} folksonomy_tags found\n"
+        else
+          msg += "No folksonomy_tags found\n"
+        end
+        msg += "#{tags_count} tags found in total"
+      else
+        msg = "No tags found"
+      end
+      [0,"#{grammar(msg)} for taxonomy \"#{taxonomy_name}\""] + res
+    rescue => e
+      [1,"show_semantics for taxonomy \"#{taxonomy_name}\" failed: #{e}"]
     end
   end
 

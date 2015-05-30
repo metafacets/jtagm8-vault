@@ -113,7 +113,7 @@ class Item < PItem
   def parse_content
     # extracts @tags and @original_tag_ids
     # + or - solely instantiate or deprecate the taxonomy
-    # otherwise taxonomy gets instantiated and item gets tagged by its leaves
+    # otherwise taxonomy gets instantiated and item gets tagged by all supplied tags (not just supplied leaves) incase any later get deleted
     unless original_content.empty?
       supplied_ddl = []
       supplied_tags = []
@@ -122,14 +122,14 @@ class Item < PItem
           Debug.show(class:self.class,method:__method__,note:'1',vars:[['op',op],['tag_ddl',tag_ddl]])
           if op == '-'
             leaves,supplied = get_taxonomy.exstantiate(tag_ddl)
-            self.tags -= leaves
+            self.tags -= supplied                           # leaves | supplied ?
             Debug.show(class:self.class,method:__method__,note:'2a',vars:[['tags',tags],['get_taxonomy.tags',get_taxonomy.tags]])
           else
             leaves,supplied = get_taxonomy.instantiate(tag_ddl)
             Debug.show(class:self.class,method:__method__,note:'2',vars:[['leaves',leaves]])
             if op == '' || op == '='
-              leaves.each {|tag| tag.union_items([self])}
-              self.tags << leaves
+              supplied.each {|tag| tag.union_items([self])} # leaves | supplied ?
+              self.tags |= supplied                         # leaves | supplied ?
               Debug.show(class:self.class,method:__method__,note:'2b',vars:[['tags',tags],['get_taxonomy.tags',get_taxonomy.tags]])
             end
           end

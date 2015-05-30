@@ -109,16 +109,16 @@ describe Item do
             ,["Name\nContent #a #b_1","Name","Content #a #b_1",[:a,:b_1],[:a,:b_1]]\
             ,["Name\nContent #a\n#b","Name","Content #a\n#b",[:a,:b],[:a,:b]]\
             ,["Name\nContent #a\n#b_1","Name","Content #a\n#b_1",[:a,:b_1],[:a,:b_1]]\
-            ,["Name\nContent #:a<:b\ncont","Name","Content #:a<:b\ncont",[:a],[:a,:b]]\
-            ,["Name\nContent =#:a<:b\ncont","Name","Content =#:a<:b\ncont",[:a],[:a,:b]]\
+            ,["Name\nContent #:a<:b\ncont","Name","Content #:a<:b\ncont",[:a,:b],[:a,:b]]\
+            ,["Name\nContent =#:a<:b\ncont","Name","Content =#:a<:b\ncont",[:a,:b],[:a,:b]]\
             ,["Name\nContent +#:a<:b\ncont","Name","Content +#:a<:b\ncont",[],[:a,:b]]\
-            ,["Name\nContent #:a>[:b,:c>[:d,:e]]\ncont","Name","Content #:a>[:b,:c>[:d,:e]]\ncont",[:b,:d,:e],[:a,:b,:c,:d,:e]]\
-            ,["Name\nContent #:a>[:b,:c>[:d,:e]]\ncont #a,b,f","Name","Content #:a>[:b,:c>[:d,:e]]\ncont #a,b,f",[:a,:b,:d,:e,:f],[:a,:b,:c,:d,:e,:f]]\
-            ,["Name\nContent #a,b,f\ncont #:a>[:b,:c>[:d,:e]]","Name","Content #a,b,f\ncont #:a>[:b,:c>[:d,:e]]",[:a,:b,:d,:e,:f],[:a,:b,:c,:d,:e,:f]]\
-            ,["Name\nContent #:a>[:b,:c>[:d,:e]]\ncont #a #b,f","Name","Content #:a>[:b,:c>[:d,:e]]\ncont #a #b,f",[:a,:b,:d,:e,:f],[:a,:b,:c,:d,:e,:f]]\
-            ,["Name\nContent #:a>[:b,:c>[:d,:e]]\ncont #a #b,f","Name","Content #:a>[:b,:c>[:d,:e]]\ncont #a #b,f",[:a,:b,:d,:e,:f],[:a,:b,:c,:d,:e,:f]]\
-            ,["Name\n#a Content #:a>[:b,:c>[:d,:e]]\ncont #b,f","Name","#a Content #:a>[:b,:c>[:d,:e]]\ncont #b,f",[:a,:b,:d,:e,:f],[:a,:b,:c,:d,:e,:f]]\
-            ,["Name\n#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a","Name","#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a",[:a,:b,:d,:e,:f],[:a,:b,:c,:d,:e,:f]]\
+            ,["Name\nContent #:a>[:b,:c>[:d,:e]]\ncont","Name","Content #:a>[:b,:c>[:d,:e]]\ncont",[:a,:b,:c,:d,:e],[:a,:b,:c,:d,:e]]\
+            ,["Name\nContent #:a>[:b,:c>[:d,:e]]\ncont #a,b,f","Name","Content #:a>[:b,:c>[:d,:e]]\ncont #a,b,f",[:a,:b,:c,:d,:e,:f],[:a,:b,:c,:d,:e,:f]]\
+            ,["Name\nContent #a,b,f\ncont #:a>[:b,:c>[:d,:e]]","Name","Content #a,b,f\ncont #:a>[:b,:c>[:d,:e]]",[:a,:b,:c,:d,:e,:f],[:a,:b,:c,:d,:e,:f]]\
+            ,["Name\nContent #:a>[:b,:c>[:d,:e]]\ncont #a #b,f","Name","Content #:a>[:b,:c>[:d,:e]]\ncont #a #b,f",[:a,:b,:c,:d,:e,:f],[:a,:b,:c,:d,:e,:f]]\
+            ,["Name\nContent #:a>[:b,:c>[:d,:e]]\ncont #a #b,f","Name","Content #:a>[:b,:c>[:d,:e]]\ncont #a #b,f",[:a,:b,:c,:d,:e,:f],[:a,:b,:c,:d,:e,:f]]\
+            ,["Name\n#a Content #:a>[:b,:c>[:d,:e]]\ncont #b,f","Name","#a Content #:a>[:b,:c>[:d,:e]]\ncont #b,f",[:a,:b,:c,:d,:e,:f],[:a,:b,:c,:d,:e,:f]]\
+            ,["Name\n#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a","Name","#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a",[:a,:b,:c,:d,:e,:f],[:a,:b,:c,:d,:e,:f]]\
             ,["Name\n#b,f Content #:a>[:b,:c>[:d,:e]]\ncont #a -#f,b,c","Name","#b_deleted,f_deleted Content #:a>[:b_deleted,:c_deleted>[:d,:e]]\ncont #a -#f_deleted,b_deleted,c_deleted",[:a,:d,:e],[:a,:d,:e]]\
             ]
     tests.each do |test|
@@ -146,7 +146,7 @@ describe Item do
           item_get_content = item.get_content
           item_tags = item.tags.map {|tag| tag.name.to_sym}.sort
           it "content = #{test[2]}" do expect(item_get_content).to eq(test[2]) end
-          it "tags = #{test[3]}" do expect(item_tags).to eq(test[3]) end
+          it "tags = #{test[3]}" do expect(item_tags).to eq(test[3]) end # was test[3]
         end
         describe :parse do
           Tagm8Db.wipe
@@ -160,7 +160,7 @@ describe Item do
           tax_tags = tax.tags.map {|tag| tag.name.to_sym}.sort
           it "name = #{test[1]}" do expect(item_name).to eq(test[1]) end
           it "content = #{test[2]}" do expect(item_content).to eq(test[2]) end
-          it "tags = #{test[3]}" do expect(item_tags).to eq(test[3]) end
+          it "tags = #{test[3]}" do expect(item_tags).to eq(test[3]) end # was test[3]
           it "Taxonomy.tags = #{test[4]}" do expect(tax_tags).to eq(test[4]) end
         end
         describe :instantiate do
@@ -176,7 +176,7 @@ describe Item do
           items = alm.items.map {|i| i.name}
           it "name = #{test[1]}" do expect(item_name).to eq(test[1]) end
           it "content = #{test[2]}" do expect(item_content).to eq(test[2]) end
-          it "tags = #{test[3]}" do expect(item_tags).to eq(test[3]) end
+          it "tags = #{test[3]}" do expect(item_tags).to eq(test[3]) end # was test[3]
           it "Taxonomy.tags = #{test[4]}" do expect(tax_tags).to eq(test[4]) end
           it "items = ['Name']" do expect(items).to eq(['Name']) end
         end
@@ -192,7 +192,7 @@ describe Item do
           items = alm.items.map {|i| i.name}
           it "name = #{test[1]}" do expect(item_name).to eq(test[1]) end
           it "content = #{test[2]}" do expect(item_content).to eq(test[2]) end
-          it "tags = #{test[3]}" do expect(item_tags).to eq(test[3]) end
+          it "tags = #{test[3]}" do expect(item_tags).to eq(test[3]) end # was test[3]
           it "Taxonomy.tags = #{test[4]}" do expect(tax_tags).to eq(test[4]) end
           it "items = ['Name']" do expect(items).to eq(['Name']) end
         end
@@ -202,7 +202,7 @@ describe Item do
           alm = tax.add_album('alm')
           item = alm.add_item(test[0])
           queried_tags = item.query_tags.map {|tag| tag.name.to_sym}.sort
-          it "query_tags = #{test[3]}" do expect(queried_tags).to eq(test[3]) end
+          it "query_tags = #{test[3]}" do expect(queried_tags).to eq(test[3]) end # was test[3]
         end
         describe ':get_content and tag renaming with round-tripping' do
           Tagm8Db.wipe

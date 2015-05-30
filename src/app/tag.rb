@@ -116,7 +116,7 @@ class Taxonomy < PTaxonomy
     before_list = list_tags if report
     branch ? found.each{|tag| tag.delete_branch} : found.each {|tag| delete_tag(tag.name)}
     deleted = tags-before # original tags now gone
-    deleted_list = before_list-Taxonomy.get_by_name(name).list_tags # re-acquire taxonomy for updated list_tags
+    deleted_list = before_list-Taxonomy.get_by_name(name).list_tags if report # re-acquire taxonomy for updated list_tags
     # [supplied_count,found_count,deleted_count,deleted_tags,deleted_list]
     report ? [Ddl.tags.size,found.size,deleted_list.size,deleted_list.sort] : [deleted,found]
   end

@@ -123,7 +123,7 @@ class Facade
             if i%10 > 0
               res[i] = "          %-#{tax_name_length}s       %-#{tax_dag_length}s     %#{tag_count_length}s       %#{root_count_length}s        %#{folk_count_length}s        %#{link_count_length}s           %#{alm_count_length}s        " % [detail[0],detail[1],detail[2],detail[3],detail[4],detail[5],detail[6]]
             else
-              res[i] = "taxonomy \"%-#{tax_name_length}s\" DAG: %-#{tax_dag_length}s has %#{tag_count_length}s tags, %#{root_count_length}s roots, %#{folk_count_length}s folks, %#{link_count_length}s links and %#{alm_count_length}s albums" % [detail[0],detail[1],detail[2],detail[3],detail[4],detail[5],detail[6]]
+              res[i] = "taxonomy %-#{tax_name_length+2}s DAG: %-#{tax_dag_length}s has %#{tag_count_length}s tags, %#{root_count_length}s roots, %#{folk_count_length}s folks, %#{link_count_length}s links and %#{alm_count_length}s albums" % ["\"#{detail[0]}\"",detail[1],detail[2],detail[3],detail[4],detail[5],detail[6]]
             end
           end
         end
@@ -327,7 +327,7 @@ class Facade
           res = []
           details.each_with_index do |detail,i|
             if i%10 == 0
-              res[i] = "tag \"%-#{tag_name_max_size}s\" of type \"%-#{tag_type_max_size}s\" in taxonomy \"%-#{tax_name_max_size}s\" tags %#{itm_count_max_size}s items and is item %-#{itm_dep_max_size}s" % [detail[0],detail[1],detail[2],detail[3],detail[4]]
+              res[i] = "tag %-#{tag_name_max_size+2}s of type %-#{tag_type_max_size+2}s in taxonomy %-#{tax_name_max_size+2}s tags %#{itm_count_max_size}s items and is item %-#{itm_dep_max_size}s" % ["\"#{detail[0]}\"","\"#{detail[1]}\"","\"#{detail[2]}\"",detail[3],detail[4]]
             else
               res[i] = "     %-#{tag_name_max_size}s           %-#{tag_type_max_size}s               %-#{tax_name_max_size}s       %#{itm_count_max_size}s                   %-#{itm_dep_max_size}s" % [detail[0],detail[1],detail[2],detail[3],detail[4]]
             end
@@ -545,7 +545,7 @@ class Facade
           res = []
           details.each_with_index do |detail,i|
             if i%10 == 0
-              res[i] = "album \"%-#{alm_name_max_size}s\" in taxonomy \"%-#{tax_name_max_size}s\" has %#{itm_count_max_size}s items" % [detail[0],detail[1],detail[2]]
+              res[i] = "album %-#{alm_name_max_size+2}s in taxonomy %-#{tax_name_max_size+2}s has %#{itm_count_max_size}s items" % ["\"#{detail[0]}\"","\"#{detail[1]}\"",detail[2]]
             else
               res[i] = "       %-#{alm_name_max_size}s               %-#{tax_name_max_size}s      %#{itm_count_max_size}s      " % [detail[0],detail[1],detail[2]]
             end
@@ -730,7 +730,7 @@ class Facade
           res = []
           details.each_with_index do |detail,i|
             if i%10 == 0 || content
-              res[i] = "item \"%-#{itm_name_max_size}s\" in album \"%-#{alm_name_max_size}s\" of taxonomy \"%-#{tax_name_max_size}s\" has %#{tag_count_max_size}s tags" % [detail[0],detail[1],detail[2],detail[3]]
+              res[i] = "item %-#{itm_name_max_size+2}s in album %-#{alm_name_max_size+2}s of taxonomy %-#{tax_name_max_size+2}s has %#{tag_count_max_size}s tags" % ["\"#{detail[0]}\"","\"#{detail[1]}\"","\"#{detail[2]}\"",detail[3]]
               res[i] += ":\n\n#{detail[4].get_content}\n\n" if content
             else
               res[i] = "      %-#{itm_name_max_size}s            %-#{alm_name_max_size}s               %-#{tax_name_max_size}s      %#{tag_count_max_size}s     " % [detail[0],detail[1],detail[2],detail[3]]

@@ -2643,6 +2643,63 @@ describe Tag do
       end
     end
   end
+  describe :list_structure do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_tags('tax1','f5')
+    face.add_album('tax1','alm1')
+    face.add_item('tax1','alm1','itm1\ncontent1 #a1>b1>[c1>d1,c2],f1,f2,f3')
+    face.add_taxonomy('tax2')
+    describe 'structure succeeds' do
+      describe 'found' do
+        result_code,result_msg,*result_data = face.list_structure('tax1')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq("1 hierarchy found containing 5 tags and 4 links\n4 folksonomy tags found\n9 tags found in total for taxonomy \"tax1\"") end
+        it "result data" do expect(result_data).to eq(["a1\n", "   b1\n", "      c1\n", "         d1\n", "      c2\n", "f1", "f2", "f3", "f5"]) end
+      end
+      describe 'found, reversed' do
+        result_code,result_msg,*result_data = face.list_structure('tax1',true)
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq("1 hierarchy found containing 5 tags and 4 links\n4 folksonomy tags found\n9 tags found in total for taxonomy \"tax1\"") end
+        it "result data" do expect(result_data).to eq(["a1\n", "   b1\n", "      c2\n", "      c1\n", "         d1\n", "f5", "f3", "f2", "f1"]) end
+      end
+      describe 'none found' do
+        result_code,result_msg,*result_data = face.list_structure('tax2')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('no tags found for taxonomy "tax2"') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+    end
+    describe 'structure fails' do
+      describe 'taxonomy unspecified - empty' do
+        result_code,result_msg,*result_data = face.list_structure('')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('list_structure for taxonomy "" failed: taxonomy unspecified') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'taxonomy unspecified - nil' do
+        result_code,result_msg,*result_data = face.list_structure(nil)
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('list_structure for taxonomy "nil:NilClass" failed: taxonomy unspecified') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'taxonomy not found' do
+        result_code,result_msg,*result_data = face.list_structure('tax5')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('list_structure for taxonomy "tax5" failed: taxonomy "tax5" not found') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'no taxonomies found, various locations for error msg' do
+        Tagm8Db.wipe
+        face = Facade.instance
+        result_code,result_msg,*result_data = face.list_structure('tax1')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('list_structure for taxonomy "tax1" failed: no taxonomies found') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+    end
+  end
 end
 
 

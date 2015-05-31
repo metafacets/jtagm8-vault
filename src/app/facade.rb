@@ -355,10 +355,10 @@ class Facade
       taxonomy_name = 'nil:NilClass' if taxonomy_name.nil?
       raise 'taxonomy unspecified' if taxonomy_name.empty? || taxonomy_name == 'nil:NilClass'
       raise 'no taxonomies found' unless Taxonomy.exists?
-      raise "Taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-      tax = Taxonomy.lazy(taxonomy_name)
+      raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+      tax = Taxonomy.get_by_name(taxonomy_name)
+      res = []
       unless tax.empty?
-        res = []
         tags_count = tax.count_tags
         roots_count = tax.count_roots
         folks_count = tax.count_folksonomies
@@ -368,7 +368,7 @@ class Facade
           roots.each{|root_name| res += show_nested.call(tax,root_name,reverse)}
           msg = "#{roots_count} hierarchies found containing #{tags_count-folks_count} tags and #{tax.count_links} links\n"
         else
-          msg = "No tag hierarchies found\n"
+          msg = "no tag hierarchies found\n"
         end
         if folks_count > 0
           folks = tax.folksonomies.map{|tag| tag.name}.sort!
@@ -376,15 +376,15 @@ class Facade
           res += folks
           msg += "#{folks_count} folksonomy_tags found\n"
         else
-          msg += "No folksonomy_tags found\n"
+          msg += "no folksonomy_tags found\n"
         end
         msg += "#{tags_count} tags found in total"
       else
-        msg = "No tags found"
+        msg = 'no tags found'
       end
       [0,"#{grammar(msg)} for taxonomy \"#{taxonomy_name}\""] + res
     rescue => e
-      [1,"show_semantics for taxonomy \"#{taxonomy_name}\" failed: #{e}"]
+      [1,"list_structure for taxonomy \"#{taxonomy_name}\" failed: #{e}"]
     end
   end
 

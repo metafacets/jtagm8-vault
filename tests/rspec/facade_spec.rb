@@ -2504,14 +2504,20 @@ describe Tag do
     face = Facade.instance
     face.add_taxonomy('tax1')
     face.add_tags('tax1','f5')
+    face.add_tags('tax1','f7')
+    face.rename_tag('tax1','f7','fn7')
     face.add_album('tax1','alm1')
     face.add_item('tax1','alm1','itm1\ncontent1 #a1>b1>[c1>d1,c2],f1,f2,f3')
     face.add_item('tax1','alm1','itm2\ncontent2 #a1>[b1>c3,b2>c4]')
-    face.add_item('tax1','alm1','itm3\ncontent3 #f3') # duplicate item dependent tag: delete itm3 keep f3
-    face.add_item('tax1','alm1','itm4\ncontent4 #f4') # only item dependent tag: delete itm4 delete f4
-    face.add_item('tax1','alm1','itm5\ncontent5 #f5') # item independent tag pre defined: delete itm5 keep f5
-    face.add_item('tax1','alm1','itm6\ncontent6 #f6') # item independent tag post defined: delete itm6 keep f6
-    face.add_tags('tax1','f6')
+    face.add_item('tax1','alm1','itm3\ncontent3 #f3')  # duplicate item dependent tag: delete itm3 keep f3
+    face.add_item('tax1','alm1','itm4\ncontent4 #f4')  # only item dependent tag: delete itm4 delete f4
+    face.add_item('tax1','alm1','itm5\ncontent5 #f5')  # item independent tag pre defined: delete itm5 keep f5
+    face.add_item('tax1','alm1','itm6\ncontent6 #f6')  # item independent tag post defined: delete itm6 keep f6
+    face.add_item('tax1','alm1','itm7\ncontent7 #fn7') # item independent tag pre defined & renamed: delete itm7 keep fn7
+    face.add_item('tax1','alm1','itm8\ncontent8 #f8')  # item independent tag post defined & renamed: delete itm8 keep fn8
+    face.add_tags('tax1','f6,f8')
+    face.rename_tag('tax1','f8','fn8')
+    face.delete_items('tax1','alm1','itm5,itm6,itm7,itm8')
     face.add_album('tax1','alm2')
     face.add_taxonomy('tax2')
     face.add_album('tax2','alm1')
@@ -2573,28 +2579,30 @@ describe Tag do
           it "result data" do expect(result_data).to eq([]) end
         end
       end
-      describe 'nothing specified, list paginates' do
-        describe '17 found, details' do
+      describe 'nothing specified, list paginates, various deletions and renames also tested' do
+        describe '19 found, details' do
           result_code,result_msg,*result_data = face.list_tags(nil,nil,nil,true)
           it "result_code" do expect(result_code).to eq(0) end
-          it "result message" do expect(result_msg).to eq('17 tags found') end
-          it "result data" do expect(result_data).to eq(['tag "a1" of type "root"       in taxonomy "tax1" tags 2 items and is item dependent  ',\
-                                                         '     b1           branch                   tax1       2                   dependent  ',\
-                                                         '     b2           branch                   tax1       1                   dependent  ',\
-                                                         '     c1           branch                   tax1       1                   dependent  ',\
-                                                         '     c1           root                     tax2       1                   dependent  ',\
-                                                         '     c2           leaf                     tax1       1                   dependent  ',\
-                                                         '     c3           leaf                     tax1       1                   dependent  ',\
-                                                         '     c4           leaf                     tax1       1                   dependent  ',\
-                                                         '     d1           leaf                     tax1       1                   dependent  ',\
-                                                         '     d1           leaf                     tax2       1                   dependent  ',\
-                                                         'tag "f1" of type "folksonomy" in taxonomy "tax1" tags 1 items and is item dependent  ',\
-                                                         '     f2           folksonomy               tax1       1                   dependent  ',\
-                                                         '     f3           folksonomy               tax1       2                   dependent  ',\
-                                                         '     f3           folksonomy               tax2       1                   dependent  ',\
-                                                         '     f4           folksonomy               tax1       1                   dependent  ',\
-                                                         '     f5           folksonomy               tax1       1                   independent',\
-                                                         '     f6           folksonomy               tax1       1                   independent']) end
+          it "result message" do expect(result_msg).to eq('19 tags found') end
+          it "result data" do expect(result_data).to eq(['tag "a1"  of type "root"       in taxonomy "tax1" tags 2 items and is item dependent  ',\
+                                                         '     b1            branch                   tax1       2                   dependent  ',\
+                                                         '     b2            branch                   tax1       1                   dependent  ',\
+                                                         '     c1            branch                   tax1       1                   dependent  ',\
+                                                         '     c1            root                     tax2       1                   dependent  ',\
+                                                         '     c2            leaf                     tax1       1                   dependent  ',\
+                                                         '     c3            leaf                     tax1       1                   dependent  ',\
+                                                         '     c4            leaf                     tax1       1                   dependent  ',\
+                                                         '     d1            leaf                     tax1       1                   dependent  ',\
+                                                         '     d1            leaf                     tax2       1                   dependent  ',\
+                                                         'tag "f1"  of type "folksonomy" in taxonomy "tax1" tags 1 items and is item dependent  ',\
+                                                         '     f2            folksonomy               tax1       1                   dependent  ',\
+                                                         '     f3            folksonomy               tax1       2                   dependent  ',\
+                                                         '     f3            folksonomy               tax2       1                   dependent  ',\
+                                                         '     f4            folksonomy               tax1       1                   dependent  ',\
+                                                         '     f5            folksonomy               tax1       0                   independent',\
+                                                         '     f6            folksonomy               tax1       0                   independent',\
+                                                         '     fn7           folksonomy               tax1       0                   independent',\
+                                                         '     fn8           folksonomy               tax1       0                   independent']) end
         end
       end
     end

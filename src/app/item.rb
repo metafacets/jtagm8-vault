@@ -121,12 +121,11 @@ class Item < PItem
         unless supplied_ddl.include?(tag_ddl)
           Debug.show(class:self.class,method:__method__,note:'1',vars:[['op',op],['tag_ddl',tag_ddl]])
           if op == '-'
-            leaves,supplied = get_taxonomy.exstantiate(tag_ddl)
+            _,supplied = get_taxonomy.exstantiate(tag_ddl)  # was leaves,supplied = ...
             self.tags -= supplied                           # leaves | supplied ?
             Debug.show(class:self.class,method:__method__,note:'2a',vars:[['tags',tags],['get_taxonomy.tags',get_taxonomy.tags]])
           else
-            leaves,supplied = get_taxonomy.instantiate(tag_ddl)
-            Debug.show(class:self.class,method:__method__,note:'2',vars:[['leaves',leaves]])
+            _,supplied = get_taxonomy.instantiate(tag_ddl)  # was leaves,supplied = ...
             if op == '' || op == '='
               supplied.each {|tag| tag.union_items([self])} # leaves | supplied ?
               self.tags |= supplied                         # leaves | supplied ?

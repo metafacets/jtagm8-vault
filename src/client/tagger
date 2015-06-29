@@ -11,7 +11,7 @@ rescue LoadError
 end
 
 DRb.start_service
-facade = DRbObject.new_with_uri('druby://127.0.0.1:61665')
+facade = DRbObject.new_with_uri('druby://127.0.0.1:61664')
 
 include GLI::App
 
@@ -316,8 +316,9 @@ command :list_albums do |c|
   c.flag [:a,:album], desc:'album name'
   c.switch [:d,:details], desc:'detailed output'
   c.switch [:r,:reverse], desc:'reverse sort alphabetically'
+  c.switch [:f,:fullnames], desc:'use fully resolved names e.g. album_name.taxonomy_name'
   c.action do |_,options,_|
-    show(facade.list_albums(options[:taxonomy],options[:album],options[:reverse],options[:details]))
+    show(facade.list_albums(options[:taxonomy],options[:album],options[:reverse],options[:details],options[:fullnames]))
   end
 end
 
@@ -361,6 +362,18 @@ command :rename_item do |c|
   end
 end
 
+desc 'Count items'
+long_desc 'Count items optionally within an album and/or taxonomy or by name'
+#arg_name 'Describe arguments to create here'
+command :count_items do |c|
+  c.flag [:t,:taxonomy], desc:'taxonomy name'
+  c.flag [:a,:album], desc:'album name'
+  c.flag [:i,:item], desc:'item name'
+  c.action do |_,options,_|
+    show(facade.count_items(options[:taxonomy],options[:album],options[:item]))
+  end
+end
+
 desc 'List items'
 long_desc 'Lists items optionally within an album and/or taxonomy or by name and with details'
 #arg_name 'Describe arguments to create here'
@@ -376,15 +389,15 @@ command :list_items do |c|
   end
 end
 
-desc 'Count items'
-long_desc 'Count items optionally within an album and/or taxonomy or by name'
+desc 'Query [items]'
+long_desc 'Queries items by their tags'
 #arg_name 'Describe arguments to create here'
-command :count_items do |c|
-  c.flag [:t,:taxonomy], desc:'taxonomy name'
-  c.flag [:a,:album], desc:'album name'
-  c.flag [:i,:item], desc:'item name'
+command :query do |c|
+  c.flag [:a,:album], desc:'album name', required:true
+  c.flag [:q,:query], desc:'query', required:true
+  c.switch [:r,:reverse], desc:'reverse sort alphabetically'
   c.action do |_,options,_|
-    show(facade.count_items(options[:taxonomy],options[:album],options[:item]))
+    show(facade.query(options[:album],options[:query],options[:reverse]))
   end
 end
 

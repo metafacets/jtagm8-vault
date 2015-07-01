@@ -1726,7 +1726,7 @@ describe Item do
           it "result data" do expect(result_data).to eq([]) end
         end
       end
-      describe 'taxonomy, album specified, with[out] reverse|details|content' do
+      describe 'taxonomy, album specified, with[out] reverse|details|content|fullnames' do
         describe '2 found' do
           result_code,result_msg,*result_data = face.list_items('tax1','alm1')
           it "result_code" do expect(result_code).to eq(0) end
@@ -1762,6 +1762,42 @@ describe Item do
           it "result_code" do expect(result_code).to eq(0) end
           it "result message" do expect(result_msg).to eq('2 items found in album "alm1" of taxonomy "tax1"') end
           it "result data" do expect(result_data).to eq(['item "itm2" in album "alm1" of taxonomy "tax1" has 2 tags','      itm1            alm1               tax1      0     ']) end
+        end
+        describe '2 found with fullnames' do
+          result_code,result_msg,*result_data = face.list_items('tax1','alm1',nil,nil,nil,nil,true)
+          it "result_code" do expect(result_code).to eq(0) end
+          it "result message" do expect(result_msg).to eq('2 items found in album "alm1" of taxonomy "tax1"') end
+          it "result data" do expect(result_data).to eq(['itm1.alm1.tax1','itm2.alm1.tax1']) end
+        end
+        describe '2 found reversed with fullnames' do
+          result_code,result_msg,*result_data = face.list_items('tax1','alm1',nil,true,nil,nil,true)
+          it "result_code" do expect(result_code).to eq(0) end
+          it "result message" do expect(result_msg).to eq('2 items found in album "alm1" of taxonomy "tax1"') end
+          it "result data" do expect(result_data).to eq(['itm2.alm1.tax1','itm1.alm1.tax1']) end
+        end
+        describe '2 found with details no content and fullnames' do
+          result_code,result_msg,*result_data = face.list_items('tax1','alm1',nil,false,true,nil,true)
+          it "result_code" do expect(result_code).to eq(0) end
+          it "result message" do expect(result_msg).to eq('2 items found in album "alm1" of taxonomy "tax1"') end
+          it "result data" do expect(result_data).to eq(['itm1.alm1.tax1 has 0 tags','itm2.alm1.tax1     2     ']) end
+        end
+        describe '2 found with content and fullnames no details' do
+          result_code,result_msg,*result_data = face.list_items('tax1','alm1',nil,false,false,true,true)
+          it "result_code" do expect(result_code).to eq(0) end
+          it "result message" do expect(result_msg).to eq('2 items found in album "alm1" of taxonomy "tax1"') end
+          it "result data" do expect(result_data).to eq(["itm1.alm1.tax1\ncontent1\n\n","itm2.alm1.tax1\ncontent2.1 \n content 2.2#t1,t2 \n content2.3\n\n"]) end
+        end
+        describe '2 found with content, details and fullnames' do
+          result_code,result_msg,*result_data = face.list_items('tax1','alm1',nil,false,true,true,true)
+          it "result_code" do expect(result_code).to eq(0) end
+          it "result message" do expect(result_msg).to eq('2 items found in album "alm1" of taxonomy "tax1"') end
+          it "result data" do expect(result_data).to eq(["itm1.alm1.tax1 has 0 tags:\n\ncontent1\n\n","itm2.alm1.tax1 has 2 tags:\n\ncontent2.1 \n content 2.2#t1,t2 \n content2.3\n\n"]) end
+        end
+        describe '2 found reversed with details and fullnames' do
+          result_code,result_msg,*result_data = face.list_items('tax1','alm1',nil,true,true,nil,true)
+          it "result_code" do expect(result_code).to eq(0) end
+          it "result message" do expect(result_msg).to eq('2 items found in album "alm1" of taxonomy "tax1"') end
+          it "result data" do expect(result_data).to eq(['itm2.alm1.tax1 has 2 tags','itm1.alm1.tax1     0     ']) end
         end
         describe 'none found' do
           result_code,result_msg,*result_data = face.list_items('tax1','alm3')

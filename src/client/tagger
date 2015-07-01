@@ -384,8 +384,9 @@ command :list_items do |c|
   c.switch [:d,:details], desc:'detailed output'
   c.switch [:r,:reverse], desc:'reverse sort alphabetically'
   c.switch [:c,:content], desc:'show item content'
+  c.switch [:f,:fullnames], desc:'use fully resolved names e.g. album_name.taxonomy_name'
   c.action do |_,options,_|
-    show(facade.list_items(options[:taxonomy],options[:album],options[:item],options[:reverse],options[:details],options[:content]))
+    show(facade.list_items(options[:taxonomy],options[:album],options[:item],options[:reverse],options[:details],options[:content],options[:fullnames]))
   end
 end
 

@@ -524,7 +524,7 @@ class Facade
           albums += [album] unless album.nil?
         end
       end
-      res = albums.map{|album| ["#{album.name}.#{album.taxonomy.name}",album.name,album.taxonomy.name,album.items.size]}
+      res = albums.map{|album| ["#{album.name}.#{album.taxonomy.name}",album.name,album]}
       res_count = res.size
       unless res.empty?
         if album_name.nil?
@@ -533,16 +533,18 @@ class Facade
         end
         if details
           extras,fullname_max_size,alm_name_max_size,tax_name_max_size,itm_count_max_size,i = [],0,0,0,0,0
-          res.each do |fullname,alm_name,tax_name,itm_count|
+          res.each do |fullname,alm_name,album|
+            itm_count = album.items.size
+            itm_count_max_size = itm_count/10+1 if itm_count/10+1 > itm_count_max_size
             if fullnames
               extras[i] = [fullname,itm_count]
               fullname_max_size = fullname.size if fullname.size > fullname_max_size
             else
+              tax_name = album.taxonomy.name
               extras[i] = [alm_name,tax_name,itm_count]
-              tax_name_max_size = tax_name.size if tax_name.size > tax_name_max_size
               alm_name_max_size = alm_name.size if alm_name.size > alm_name_max_size
+              tax_name_max_size = tax_name.size if tax_name.size > tax_name_max_size
             end
-            itm_count_max_size = itm_count/10+1 if itm_count/10+1 > itm_count_max_size
             i += 1
           end
           res = []
@@ -689,7 +691,7 @@ class Facade
     end
   end
 
-  def list_items(taxonomy_name=nil,album_name=nil,item_name=nil,reverse=false,details=false,content=false)
+  def list_items(taxonomy_name=nil,album_name=nil,item_name=nil,reverse=false,details=false,content=false,fullnames=false)
     begin
       what = ''
       what += " with name \"#{item_name}\"" unless item_name.nil?
@@ -722,38 +724,52 @@ class Facade
       end
       res_count = res.size
       unless res.empty?
-        res.map!{|item| [item.name,item]}
+        res.map!{|item| ["#{item.name}.#{item.album.name}.#{item.album.taxonomy.name}",item.name,item]}
         if item_name.nil?
           res.sort_by!(&:first)
           res.reverse! if reverse
         end
         if details || content
-          extras,itm_name_max_size,tax_name_max_size,alm_name_max_size,tag_count_max_size,i = [],0,0,0,0,0
-          res.each do |itm_name,item|
-            alm_name,tax_name,tag_count = item.album.name,item.album.taxonomy.name,item.tags.size
-            extras[i] = [itm_name,alm_name,tax_name,tag_count,item]
-            itm_name_max_size = itm_name.size if itm_name.size > itm_name_max_size
-            alm_name_max_size = alm_name.size if alm_name.size > alm_name_max_size
-            tax_name_max_size = tax_name.size if tax_name.size > tax_name_max_size
+          extras,fullname_max_size,itm_name_max_size,tax_name_max_size,alm_name_max_size,tag_count_max_size,i = [],0,0,0,0,0,0
+          res.each do |fullname,itm_name,item|
+            tag_count = item.tags.size
             tag_count_max_size = tag_count/10+1 if tag_count/10+1 > tag_count_max_size
+            if fullnames
+              extras[i] = [item,fullname,tag_count]
+              fullname_max_size = fullname.size if fullname.size > fullname_max_size
+            else
+              alm_name,tax_name = item.album.name,item.album.taxonomy.name
+              extras[i] = [item,itm_name,alm_name,tax_name,tag_count]
+              itm_name_max_size = itm_name.size if itm_name.size > itm_name_max_size
+              alm_name_max_size = alm_name.size if alm_name.size > alm_name_max_size
+              tax_name_max_size = tax_name.size if tax_name.size > tax_name_max_size
+            end
             i += 1
           end
           res = []
           extras.each_with_index do |extra,i|
             if i%10 == 0 || content
               if details
-                res[i] = "item %-#{itm_name_max_size+2}s in album %-#{alm_name_max_size+2}s of taxonomy %-#{tax_name_max_size+2}s has %#{tag_count_max_size}s tags" % ["\"#{extra[0]}\"","\"#{extra[1]}\"","\"#{extra[2]}\"",extra[3]]
+                if fullnames
+                  res[i] = "%-#{fullname_max_size}s has %#{tag_count_max_size}s tags" % [extra[1],extra[2]]
+                else
+                  res[i] = "item %-#{itm_name_max_size+2}s in album %-#{alm_name_max_size+2}s of taxonomy %-#{tax_name_max_size+2}s has %#{tag_count_max_size}s tags" % ["\"#{extra[1]}\"","\"#{extra[2]}\"","\"#{extra[3]}\"",extra[4]]
+                end
                 res[i] += ":\n" if content
               else
-                res[i] = extra[0]
+                res[i] = extra[1]
               end
-              res[i] += "\n#{extra[4].get_content}\n\n" if content
+              res[i] += "\n#{extra[0].get_content}\n\n" if content
             else
-              res[i] = "      %-#{itm_name_max_size}s            %-#{alm_name_max_size}s               %-#{tax_name_max_size}s      %#{tag_count_max_size}s     " % [extra[0],extra[1],extra[2],extra[3]]
+              if fullnames
+                res[i] = "%-#{fullname_max_size}s     %#{tag_count_max_size}s     " % [extra[1],extra[2]]
+              else
+                res[i] = "      %-#{itm_name_max_size}s            %-#{alm_name_max_size}s               %-#{tax_name_max_size}s      %#{tag_count_max_size}s     " % [extra[1],extra[2],extra[3],extra[4]]
+              end
             end
           end
         else
-          res.map!{|row| row[0]}
+          res.map!{|row| fullnames ? row[0] : row[1]}
         end
       end
       [0,grammar("#{res_count} items found#{what}")]+res

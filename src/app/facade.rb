@@ -778,24 +778,85 @@ class Facade
     end
   end
 
-  def query(album_name,query,reverse=false)
+  def query_items(taxonomy_name=nil,album_name=nil,query=nil,reverse=false,details=false,content=false,fullnames=false)
     begin
-      taxonomy_name = 'nil:NilClass' if taxonomy_name.nil?
-      album_name = 'nil:NilClass' if album_name.nil?
       query = 'nil:NilClass' if query.nil?
-      location = "in taxonomy \"#{taxonomy_name}\" album \"#{album_name}\" matching query \"#{query}\""
-      raise 'taxonomy unspecified' if taxonomy_name.empty? || taxonomy_name == 'nil:NilClass'
-      raise 'album unspecified' if album_name.empty? || album_name == 'nil:NilClass'
-      raise 'query missing' if query.empty? || query == 'nil:NilClass'
-      raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
-      tax = Taxonomy.get_by_name(taxonomy_name)
-      raise "album \"#{album_name}\" not found in taxonomy \"#{taxonomy_name}\"" unless tax.has_album?(album_name)
-      album = tax.get_album_by_name(album_name)
-      res = album.query(query).sort
-      res.reverse! if reverse
-      [0,grammar("#{res.size} items found #{what}")]+res
+      what = ''
+      what += " \"#{query}\""
+      what += " in album \"#{album_name}\"" unless album_name.nil?
+      what += " of taxonomy \"#{taxonomy_name}\"" unless taxonomy_name.nil?
+      raise 'album unspecified' if !album_name.nil? && album_name.empty?
+      raise 'query missing' if query == 'nil:NilClass' || query.empty?
+      if taxonomy_name.nil?
+        raise 'no taxonomies found' unless Taxonomy.exists?
+        unless Album.exists?(album_name)
+          raise 'no albums found' if album_name.nil?
+          raise "album \"#{album_name}\" not found"
+        end
+        albums = Album.get_by_name(album_name)
+      else
+        raise 'taxonomy unspecified' if taxonomy_name.empty?
+        raise "taxonomy \"#{taxonomy_name}\" not found" unless Taxonomy.exists?(taxonomy_name)
+        tax = Taxonomy.get_by_name(taxonomy_name)
+        unless tax.has_album?(album_name)
+          album_name.nil? ? msg = 'no albums' : msg = "album \"#{album_name}\" not"
+          raise "#{msg} found in taxonomy \"#{taxonomy_name}\""
+        end
+        album_name.nil? ? albums = tax.albums : albums = [tax.get_album_by_name(album_name)]
+      end
+      res = []
+      albums.each {|album| res += album.query_items(query)}
+      res_count = res.size
+      unless res.empty?
+        res.map!{|item| ["#{item.name}.#{item.album.name}.#{item.album.taxonomy.name}",item.name,item]}
+        res.sort_by!(&:first)
+        res.reverse! if reverse
+        if details || content
+          extras,fullname_max_size,itm_name_max_size,tax_name_max_size,alm_name_max_size,tag_count_max_size,i = [],0,0,0,0,0,0
+          res.each do |fullname,itm_name,item|
+            tag_count = item.tags.size
+            tag_count_max_size = tag_count/10+1 if tag_count/10+1 > tag_count_max_size
+            if fullnames
+              extras[i] = [item,fullname,tag_count]
+              fullname_max_size = fullname.size if fullname.size > fullname_max_size
+            else
+              alm_name,tax_name = item.album.name,item.album.taxonomy.name
+              extras[i] = [item,itm_name,alm_name,tax_name,tag_count]
+              itm_name_max_size = itm_name.size if itm_name.size > itm_name_max_size
+              alm_name_max_size = alm_name.size if alm_name.size > alm_name_max_size
+              tax_name_max_size = tax_name.size if tax_name.size > tax_name_max_size
+            end
+            i += 1
+          end
+          res = []
+          extras.each_with_index do |extra,i|
+            if i%10 == 0 || content
+              if details
+                if fullnames
+                  res[i] = "%-#{fullname_max_size}s has %#{tag_count_max_size}s tags" % [extra[1],extra[2]]
+                else
+                  res[i] = "item %-#{itm_name_max_size+2}s in album %-#{alm_name_max_size+2}s of taxonomy %-#{tax_name_max_size+2}s has %#{tag_count_max_size}s tags" % ["\"#{extra[1]}\"","\"#{extra[2]}\"","\"#{extra[3]}\"",extra[4]]
+                end
+                res[i] += ":\n" if content
+              else
+                res[i] = extra[1]
+              end
+              res[i] += "\n#{extra[0].get_content}\n\n" if content
+            else
+              if fullnames
+                res[i] = "%-#{fullname_max_size}s     %#{tag_count_max_size}s     " % [extra[1],extra[2]]
+              else
+                res[i] = "      %-#{itm_name_max_size}s            %-#{alm_name_max_size}s               %-#{tax_name_max_size}s      %#{tag_count_max_size}s     " % [extra[1],extra[2],extra[3],extra[4]]
+              end
+            end
+          end
+        else
+          res.map!{|row| fullnames ? row[0] : row[1]}
+        end
+      end
+      [0,grammar("#{res_count} items found matching#{what}")]+res
     rescue => e
-      [1,"query[_items] #{location} failed: #{e}"]
+      [1,"query_items matching#{what} failed: #{e}"]
     end
   end
 end

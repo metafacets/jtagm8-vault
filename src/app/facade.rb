@@ -503,7 +503,7 @@ class Facade
     end
   end
 
-  def list_albums(taxonomy_name=nil,album_name=nil,reverse=false,details=false,fullnames=false)
+  def list_albums(taxonomy_name=nil,album_name=nil,reverse=false,details=false,fullnames='no')
     begin
       what = ''
       what += " with name \"#{album_name}\"" unless album_name.nil?
@@ -524,7 +524,9 @@ class Facade
           albums += [album] unless album.nil?
         end
       end
-      res = albums.map{|album| ["#{album.name}.#{album.taxonomy.name}",album.name,album]}
+      fullnames = 'no' if fullnames.nil?
+      raise "fullnames \"#{fullnames}\" invalid - use 'no', 'topdown' or 'bottomup' only" unless ['no','topdown','bottomup'].include?(fullnames)
+      res = albums.map{|album| fullnames == 'topdown' ? ["#{album.taxonomy.name}.#{album.name}",album.name,album] : ["#{album.name}.#{album.taxonomy.name}",album.name,album]}
       res_count = res.size
       unless res.empty?
         if album_name.nil?
@@ -536,7 +538,7 @@ class Facade
           res.each do |fullname,alm_name,album|
             itm_count = album.items.size
             itm_count_max_size = itm_count/10+1 if itm_count/10+1 > itm_count_max_size
-            if fullnames
+            if fullnames != 'no'
               extras[i] = [fullname,itm_count]
               fullname_max_size = fullname.size if fullname.size > fullname_max_size
             else
@@ -550,13 +552,13 @@ class Facade
           res = []
           extras.each_with_index do |extra,i|
             if i%10 == 0
-              if fullnames
+              if fullnames != 'no'
                 res[i] = "%-#{fullname_max_size}s has %#{itm_count_max_size}s items" % [extra[0],extra[1]]
               else
                 res[i] = "album %-#{alm_name_max_size+2}s in taxonomy %-#{tax_name_max_size+2}s has %#{itm_count_max_size}s items" % ["\"#{extra[0]}\"","\"#{extra[1]}\"",extra[2]]
               end
             else
-              if fullnames
+              if fullnames != 'no'
                 res[i] = "%-#{fullname_max_size}s     %#{itm_count_max_size}s      " % [extra[0],extra[1]]
               else
                 res[i] = "       %-#{alm_name_max_size}s               %-#{tax_name_max_size}s      %#{itm_count_max_size}s      " % [extra[0],extra[1],extra[2]]
@@ -564,7 +566,7 @@ class Facade
             end
           end
         else
-          res.map!{|row| fullnames ? row[0] : row[1]}
+          res.map!{|row| fullnames != 'no' ? row[0] : row[1]}
         end
       end
       [0,grammar("#{res_count} albums found#{what}")]+res
@@ -691,7 +693,7 @@ class Facade
     end
   end
 
-  def list_items(taxonomy_name=nil,album_name=nil,item_name=nil,reverse=false,details=false,content=false,fullnames=false)
+  def list_items(taxonomy_name=nil,album_name=nil,item_name=nil,reverse=false,details=false,content=false,fullnames='no')
     begin
       what = ''
       what += " with name \"#{item_name}\"" unless item_name.nil?
@@ -716,6 +718,8 @@ class Facade
         end
         album_name.nil? ? albums = tax.albums : albums = [tax.get_album_by_name(album_name)]
       end
+      fullnames = 'no' if fullnames.nil?
+      raise "fullnames \"#{fullnames}\" invalid - use 'no', 'topdown' or 'bottomup' only" unless ['no','topdown','bottomup'].include?(fullnames)
       res = []
       albums.each do |album|
         if album.has_item?(item_name)
@@ -724,7 +728,7 @@ class Facade
       end
       res_count = res.size
       unless res.empty?
-        res.map!{|item| ["#{item.name}.#{item.album.name}.#{item.album.taxonomy.name}",item.name,item]}
+        res.map!{|item| fullnames == 'topdown' ? ["#{item.album.taxonomy.name}.#{item.album.name}.#{item.name}",item.name,item] : ["#{item.name}.#{item.album.name}.#{item.album.taxonomy.name}",item.name,item]}
         if item_name.nil?
           res.sort_by!(&:first)
           res.reverse! if reverse
@@ -734,7 +738,7 @@ class Facade
           res.each do |fullname,itm_name,item|
             tag_count = item.tags.size
             tag_count_max_size = tag_count/10+1 if tag_count/10+1 > tag_count_max_size
-            if fullnames
+            if fullnames != 'no'
               extras[i] = [item,fullname,tag_count]
               fullname_max_size = fullname.size if fullname.size > fullname_max_size
             else
@@ -750,7 +754,7 @@ class Facade
           extras.each_with_index do |extra,i|
             if i%10 == 0 || content
               if details
-                if fullnames
+                if fullnames != 'no'
                   res[i] = "%-#{fullname_max_size}s has %#{tag_count_max_size}s tags" % [extra[1],extra[2]]
                 else
                   res[i] = "item %-#{itm_name_max_size+2}s in album %-#{alm_name_max_size+2}s of taxonomy %-#{tax_name_max_size+2}s has %#{tag_count_max_size}s tags" % ["\"#{extra[1]}\"","\"#{extra[2]}\"","\"#{extra[3]}\"",extra[4]]
@@ -761,7 +765,7 @@ class Facade
               end
               res[i] += "\n#{extra[0].get_content}\n\n" if content
             else
-              if fullnames
+              if fullnames != 'no'
                 res[i] = "%-#{fullname_max_size}s     %#{tag_count_max_size}s     " % [extra[1],extra[2]]
               else
                 res[i] = "      %-#{itm_name_max_size}s            %-#{alm_name_max_size}s               %-#{tax_name_max_size}s      %#{tag_count_max_size}s     " % [extra[1],extra[2],extra[3],extra[4]]
@@ -769,7 +773,7 @@ class Facade
             end
           end
         else
-          res.map!{|row| fullnames ? row[0] : row[1]}
+          res.map!{|row| fullnames != 'no' ? row[0] : row[1]}
         end
       end
       [0,grammar("#{res_count} items found#{what}")]+res
@@ -778,7 +782,7 @@ class Facade
     end
   end
 
-  def query_items(taxonomy_name=nil,album_name=nil,query=nil,reverse=false,details=false,content=false,fullnames=false)
+  def query_items(taxonomy_name=nil,album_name=nil,query=nil,reverse=false,details=false,content=false,fullnames='no')
     begin
       query = 'nil:NilClass' if query.nil?
       what = ''
@@ -804,11 +808,13 @@ class Facade
         end
         album_name.nil? ? albums = tax.albums : albums = [tax.get_album_by_name(album_name)]
       end
+      fullnames = 'no' if fullnames.nil?
+      raise "fullnames \"#{fullnames}\" invalid - use 'no', 'topdown' or 'bottomup' only" unless ['no','topdown','bottomup'].include?(fullnames)
       res = []
       albums.each {|album| res += album.query_items(query)}
       res_count = res.size
       unless res.empty?
-        res.map!{|item| ["#{item.name}.#{item.album.name}.#{item.album.taxonomy.name}",item.name,item]}
+        res.map!{|item| fullnames == 'topdown' ? ["#{item.album.taxonomy.name}.#{item.album.name}.#{item.name}",item.name,item] : ["#{item.name}.#{item.album.name}.#{item.album.taxonomy.name}",item.name,item]}
         res.sort_by!(&:first)
         res.reverse! if reverse
         if details || content
@@ -816,7 +822,7 @@ class Facade
           res.each do |fullname,itm_name,item|
             tag_count = item.tags.size
             tag_count_max_size = tag_count/10+1 if tag_count/10+1 > tag_count_max_size
-            if fullnames
+            if fullnames != 'no'
               extras[i] = [item,fullname,tag_count]
               fullname_max_size = fullname.size if fullname.size > fullname_max_size
             else
@@ -832,7 +838,7 @@ class Facade
           extras.each_with_index do |extra,i|
             if i%10 == 0 || content
               if details
-                if fullnames
+                if fullnames != 'no'
                   res[i] = "%-#{fullname_max_size}s has %#{tag_count_max_size}s tags" % [extra[1],extra[2]]
                 else
                   res[i] = "item %-#{itm_name_max_size+2}s in album %-#{alm_name_max_size+2}s of taxonomy %-#{tax_name_max_size+2}s has %#{tag_count_max_size}s tags" % ["\"#{extra[1]}\"","\"#{extra[2]}\"","\"#{extra[3]}\"",extra[4]]
@@ -843,7 +849,7 @@ class Facade
               end
               res[i] += "\n#{extra[0].get_content}\n\n" if content
             else
-              if fullnames
+              if fullnames != 'no'
                 res[i] = "%-#{fullname_max_size}s     %#{tag_count_max_size}s     " % [extra[1],extra[2]]
               else
                 res[i] = "      %-#{itm_name_max_size}s            %-#{alm_name_max_size}s               %-#{tax_name_max_size}s      %#{tag_count_max_size}s     " % [extra[1],extra[2],extra[3],extra[4]]
@@ -851,7 +857,7 @@ class Facade
             end
           end
         else
-          res.map!{|row| fullnames ? row[0] : row[1]}
+          res.map!{|row| fullnames != 'no' ? row[0] : row[1]}
         end
       end
       [0,grammar("#{res_count} items found matching#{what}")]+res

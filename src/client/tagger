@@ -314,9 +314,9 @@ long_desc 'Lists albums optionally within a taxonomy or by name and with details
 command :list_albums do |c|
   c.flag [:t,:taxonomy], desc:'taxonomy name'
   c.flag [:a,:album], desc:'album name'
+  c.flag [:f,:fullnames], desc:'use fully resolved names e.g. album_name.taxonomy_name', must_match: ['no','topdown','bottomup']
   c.switch [:d,:details], desc:'detailed output'
   c.switch [:r,:reverse], desc:'reverse sort alphabetically'
-  c.switch [:f,:fullnames], desc:'use fully resolved names e.g. album_name.taxonomy_name'
   c.action do |_,options,_|
     show(facade.list_albums(options[:taxonomy],options[:album],options[:reverse],options[:details],options[:fullnames]))
   end
@@ -381,26 +381,26 @@ command :list_items do |c|
   c.flag [:t,:taxonomy], desc:'taxonomy name'
   c.flag [:a,:album], desc:'album name'
   c.flag [:i,:item], desc:'item name'
+  c.flag [:f,:fullnames], desc:'use fully resolved names e.g. item_name.album_name.taxonomy_name', must_match: ['no','topdown','bottomup']
   c.switch [:d,:details], desc:'detailed output'
   c.switch [:r,:reverse], desc:'reverse sort alphabetically'
   c.switch [:c,:content], desc:'show item content'
-  c.switch [:f,:fullnames], desc:'use fully resolved names e.g. album_name.taxonomy_name'
   c.action do |_,options,_|
     show(facade.list_items(options[:taxonomy],options[:album],options[:item],options[:reverse],options[:details],options[:content],options[:fullnames]))
   end
 end
 
-desc 'Query[_items]'
+desc 'Query_[items]'
 long_desc 'Queries items optionally within an album and/or taxonomy or by name and with details'
 #arg_name 'Describe arguments to create here'
 command [:query,:query_items] do |c|
   c.flag [:t,:taxonomy], desc:'taxonomy name'
   c.flag [:a,:album], desc:'album name'
   c.flag [:q,:query], desc:'item name', required:true
+  c.flag [:f,:fullnames], desc:'use fully resolved names e.g. item_name.album_name.taxonomy_name', must_match: ['no','topdown','bottomup']
   c.switch [:d,:details], desc:'detailed output'
   c.switch [:r,:reverse], desc:'reverse sort alphabetically'
   c.switch [:c,:content], desc:'show item content'
-  c.switch [:f,:fullnames], desc:'use fully resolved names e.g. album_name.taxonomy_name'
   c.action do |_,options,_|
     show(facade.query_items(options[:taxonomy],options[:album],options[:query],options[:reverse],options[:details],options[:content],options[:fullnames]))
   end

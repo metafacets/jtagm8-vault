@@ -3,6 +3,22 @@ require_relative '../../src/app/facade'
 
 Tagm8Db.open('tagm8-test')
 
+describe Tagm8Db do
+  describe :wipe do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_taxonomy('tax2')
+    _,_,*list_tax_before = face.list_taxonomies
+    result_code,result_msg,*result_data = face.wipe
+    _,_,*list_tax_after = face.list_taxonomies
+    it "before wipe 'tax1 & tax2' listed" do expect(list_tax_before).to eq(['tax1','tax2']) end
+    it "wipe result_code" do expect(result_code).to eq(0) end
+    it "wipe result message" do expect(result_msg).to eq('database wiped') end
+    it "wipe result data" do expect(result_data).to eq([]) end
+    it "after wipe no taxonomies listed" do expect(list_tax_after).to eq([]) end
+  end
+end
 describe Taxonomy do
   describe :add_taxonomy do
     describe 'add succeeds' do

@@ -1,3 +1,4 @@
+#!/bin/env jruby
 require_relative 'tag'
 require 'singleton'
 

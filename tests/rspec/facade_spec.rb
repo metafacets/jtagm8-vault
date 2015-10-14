@@ -202,13 +202,13 @@ describe Taxonomy do
         it "result data" do expect(result_data).to eq([]) end
       end
       describe 'rename unspecified' do
-          Tagm8Db.wipe
-          face = Facade.instance
-          face.add_taxonomy('tax1')
-          result_code,result_msg,*result_data = face.rename_taxonomy('tax1','')
-          it "result_code" do expect(result_code).to eq(1) end
-          it "result message" do expect(result_msg).to eq('rename_taxonomy "tax1" to "" failed: taxonomy rename unspecified') end
-          it "result data" do expect(result_data).to eq([]) end
+        Tagm8Db.wipe
+        face = Facade.instance
+        face.add_taxonomy('tax1')
+        result_code,result_msg,*result_data = face.rename_taxonomy('tax1','')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('rename_taxonomy "tax1" to "" failed: taxonomy rename unspecified') end
+        it "result data" do expect(result_data).to eq([]) end
       end
       describe 'rename nil' do
         Tagm8Db.wipe
@@ -2754,14 +2754,14 @@ describe Tag do
       end
       describe 'taxonomy not found' do
         describe 'other taxonomy and tags exist' do
-        Tagm8Db.wipe
-        face = Facade.instance
-        face.add_taxonomy('tax2')
-        face.add_tags('tax2','t1')
-        result_code,result_msg,*result_data = face.delete_tags('tax1','t1')
-        it "result_code" do expect(result_code).to eq(1) end
-        it "result message" do expect(result_msg).to eq('delete_tags "t1" from taxonomy "tax1" failed: taxonomy "tax1" not found') end
-        it "result data" do expect(result_data).to eq([]) end
+          Tagm8Db.wipe
+          face = Facade.instance
+          face.add_taxonomy('tax2')
+          face.add_tags('tax2','t1')
+          result_code,result_msg,*result_data = face.delete_tags('tax1','t1')
+          it "result_code" do expect(result_code).to eq(1) end
+          it "result message" do expect(result_msg).to eq('delete_tags "t1" from taxonomy "tax1" failed: taxonomy "tax1" not found') end
+          it "result data" do expect(result_data).to eq([]) end
         end
         describe 'no taxonomy and tags exist' do
           Tagm8Db.wipe
@@ -3067,6 +3067,135 @@ describe Tag do
           it "result message" do expect(result_msg).to eq('count_tags failed: no taxonomies found') end
           it "result data" do expect(result_data).to eq([]) end
         end
+      end
+    end
+  end
+  describe :count_links do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_tags('tax1','f5')
+    face.add_album('tax1','alm1')
+    face.add_item('tax1','alm1','itm1\ncontent1 #a1>b1>[c1>d1,c2],f1,f2,f3')
+    face.add_taxonomy('tax2')
+    describe 'count succeeds' do
+      describe 'links found' do
+        result_code,result_msg,*result_data = face.count_links('tax1')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq([4]) end
+      end
+      describe 'none found' do
+        result_code,result_msg,*result_data = face.count_links('tax2')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq([0]) end
+      end
+    end
+    describe 'count fails' do
+      describe 'taxonomy unspecified - empty' do
+        result_code,result_msg,*result_data = face.count_links('')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('count_links in taxonomy "" failed: taxonomy unspecified') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'taxonomy unspecified - nil' do
+        result_code,result_msg,*result_data = face.count_links(nil)
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('count_links in taxonomy "nil:NilClass" failed: taxonomy unspecified') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'taxonomy not found' do
+        result_code,result_msg,*result_data = face.count_links('tax')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('count_links in taxonomy "tax" failed: taxonomy "tax" not found') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+    end
+  end
+  describe :count_roots do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_tags('tax1','r2>b2,f5')
+    face.add_album('tax1','alm1')
+    face.add_item('tax1','alm1','itm1\ncontent1 #r1>b1>[c1>d1,c2],f1,f2,f3')
+    face.add_taxonomy('tax2')
+    describe 'count succeeds' do
+      describe 'roots found' do
+        result_code,result_msg,*result_data = face.count_roots('tax1')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq([2]) end
+      end
+      describe 'none found' do
+        result_code,result_msg,*result_data = face.count_roots('tax2')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq([0]) end
+      end
+    end
+    describe 'count fails' do
+      describe 'taxonomy unspecified - empty' do
+        result_code,result_msg,*result_data = face.count_roots('')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('count_roots in taxonomy "" failed: taxonomy unspecified') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'taxonomy unspecified - nil' do
+        result_code,result_msg,*result_data = face.count_roots(nil)
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('count_roots in taxonomy "nil:NilClass" failed: taxonomy unspecified') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'taxonomy not found' do
+        result_code,result_msg,*result_data = face.count_roots('tax')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('count_roots in taxonomy "tax" failed: taxonomy "tax" not found') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+    end
+  end
+  describe :count_folksonomies do
+    Tagm8Db.wipe
+    face = Facade.instance
+    face.add_taxonomy('tax1')
+    face.add_tags('tax1','f5')
+    face.add_album('tax1','alm1')
+    face.add_item('tax1','alm1','itm1\ncontent1 #a1>b1>[c1>d1,c2],f1,f2,f3')
+    face.add_taxonomy('tax2')
+    describe 'count succeeds' do
+      describe 'folksonomies found' do
+        result_code,result_msg,*result_data = face.count_folksonomies('tax1')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq([4]) end
+      end
+      describe 'none found' do
+        result_code,result_msg,*result_data = face.count_folksonomies('tax2')
+        it "result_code" do expect(result_code).to eq(0) end
+        it "result message" do expect(result_msg).to eq('') end
+        it "result data" do expect(result_data).to eq([0]) end
+      end
+    end
+    describe 'count fails' do
+      describe 'taxonomy unspecified - empty' do
+        result_code,result_msg,*result_data = face.count_folksonomies('')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('count_folksonomies in taxonomy "" failed: taxonomy unspecified') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'taxonomy unspecified - nil' do
+        result_code,result_msg,*result_data = face.count_folksonomies(nil)
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('count_folksonomies in taxonomy "nil:NilClass" failed: taxonomy unspecified') end
+        it "result data" do expect(result_data).to eq([]) end
+      end
+      describe 'taxonomy not found' do
+        result_code,result_msg,*result_data = face.count_folksonomies('tax')
+        it "result_code" do expect(result_code).to eq(1) end
+        it "result message" do expect(result_msg).to eq('count_folksonomies in taxonomy "tax" failed: taxonomy "tax" not found') end
+        it "result data" do expect(result_data).to eq([]) end
       end
     end
   end

@@ -1178,7 +1178,7 @@ describe 'Taxonomy' do
   end
   describe 'derivation methods' do
     describe Tag do
-      describe :get_descendents do
+      describe :get_descendants do
         tests = [[':a>:b>:c',[:b,:c]]\
                 ,[':a>[:b1,:b2]',[:b1,:b2]]\
                 ,[':a>[:b1,:b2>:c]',[:b1,:b2,:c]]\
@@ -1190,9 +1190,9 @@ describe 'Taxonomy' do
           tax = Taxonomy.new
           tax.instantiate(test[0])
           a = tax.get_tag_by_name(:a)
-          desc = a.get_descendents.map {|d| d.name.to_sym}.sort
+          desc = a.get_descendants.map {|d| d.name.to_sym}.sort
           desc_ok = (desc&test[1]) == test[1]
-          it "descendents of :a from #{test[0]} = #{test[1]}" do expect(desc_ok).to be true end
+          it "descendants of :a from #{test[0]} = #{test[1]}" do expect(desc_ok).to be true end
         end
       end
       describe :get_ancestors do

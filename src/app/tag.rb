@@ -185,7 +185,7 @@ class Taxonomy < PTaxonomy
             if dag == 'prevent'
               ctags -= [child]
             else
-              (parent.get_parents & child.get_descendents+[child]).each {|grand_parent| parent.delete_parent(grand_parent)}
+              (parent.get_parents & child.get_descendants+[child]).each {|grand_parent| parent.delete_parent(grand_parent)}
               child.union_parents([parent])
               #child.parents |= [parent]
             end
@@ -272,45 +272,45 @@ class Tag < PTag
     depth
   end
 
-  def get_descendents
-    descendents,_ = collate_descendents
-    descendents
+  def get_descendants
+    descendants,_ = collate_descendants
+    descendants
   end
 
   def count_links
-    _,link_count = collate_descendents
+    _,link_count = collate_descendants
     link_count
   end
 
-  def collate_descendents(descendents=[])
-#    puts "Tag.get_descendents: descendents=#{descendents}"
+  def collate_descendants(descendants=[])
+#    puts "Tag.get_descendants: descendants=#{descendants}"
     childs = get_children
     link_count = childs.size
-#    puts "Tag.get_descendents: childs=#{childs}"
+#    puts "Tag.get_descendants: childs=#{childs}"
     childs.each do |child|
-      child_descendents,child_link_count = child.collate_descendents(childs)
-      descendents |= child_descendents
+      child_descendants,child_link_count = child.collate_descendants(childs)
+      descendants |= child_descendants
       link_count += child_link_count
     end
-    [descendents,link_count]
+    [descendants,link_count]
   end
 
-  def delete_descendents
-#    puts "Tag.delete_descendents: self=#{self}"
-    descendents = get_descendents
-#    puts "Tag.delete_descendents: descendents=#{descendents}"
+  def delete_descendants
+#    puts "Tag.delete_descendants: self=#{self}"
+    descendants = get_descendants
+#    puts "Tag.delete_descendants: descendants=#{descendants}"
     tax = get_taxonomy
-    tax.subtract_tags(descendents)
-    tax.subtract_roots(descendents)
-    tax.subtract_folksonomies(descendents)
+    tax.subtract_tags(descendants)
+    tax.subtract_roots(descendants)
+    tax.subtract_folksonomies(descendants)
     empty_children
   end
 
-  def add_descendents(children) create_children(children) end
+  def add_descendants(children) create_children(children) end
 
   def delete_branch
-    # delete self and its descendents
-    delete_descendents
+    # delete self and its descendants
+    delete_descendants
 #    puts "Tag.delete_branch 1"
     get_parents.each{|parent| parent.delete_child(self)}
 #    puts "Tag.delete_branch 2"
@@ -324,7 +324,7 @@ class Tag < PTag
   def query_items
     # queries items matching this tag
     result = items
-    get_descendents.each {|desc| result |= desc.items}
+    get_descendants.each {|desc| result |= desc.items}
     result
   end
 
